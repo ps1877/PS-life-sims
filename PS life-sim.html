@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Life Sim"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<title>Life Sim</title>
+<link rel="manifest" href="data:application/json,{%22name%22:%22Life+Sim%22,%22short_name%22:%22Life+Sim%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230f0f0f%22,%22theme_color%22:%22%230f0f0f%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231D9E75'/%3E%3Ctext y='.9em' font-size='72' x='12'%3E🌍%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}"/>
+<style>
+:root{
+--bg:#0f0f0f;--bg2:#1a1a1a;--bg3:#242424;--bg4:#2e2e2e;
+--text:#f0f0f0;--text2:#a0a0a0;--text3:#666;
+--green:#1D9E75;--blue:#378ADD;--amber:#BA7517;--pink:#D4537E;--purple:#7F77DD;--gold:#EF9F27;
+--red:#E24B4A;--border:#333;--border2:#444;
+--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif}
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-top)}
+.screen{display:none;flex:1;overflow:hidden;flex-direction:column}
+.screen.active{display:flex}
+/* Header */
+.top-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px 8px;flex-shrink:0}
+.top-bar h1{font-size:17px;font-weight:600;color:var(--text)}
+.top-bar .sub{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4}
+/* Scroll content */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 8px}
+/* Bottom nav */
+.bottom-nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bot);flex-shrink:0}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;gap:3px;border:none;background:none;color:var(--text2);font-size:10px;cursor:pointer;transition:color .15s}
+.nav-btn.on{color:var(--green)}
+.nav-btn .ico{font-size:20px;line-height:1}
+/* Stat bar */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.stat-card{background:var(--bg2);border-radius:10px;padding:8px 6px;text-align:center}
+.stat-label{font-size:10px;color:var(--text3);margin-bottom:2px}
+.stat-val{font-size:15px;font-weight:600;color:var(--text)}
+.stat-bar{height:3px;background:var(--bg4);border-radius:2px;margin-top:4px;overflow:hidden}
+.stat-bar-fill{height:3px;border-radius:2px;transition:width .4s}
+/* Event card */
+.ev-card{background:var(--bg2);border-radius:14px;padding:14px;margin-bottom:12px}
+.ev-tag{font-size:11px;color:var(--text3);margin-bottom:6px}
+.ev-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.3}
+.ev-body{font-size:14px;color:var(--text2);line-height:1.65;background:var(--bg3);padding:12px;border-radius:10px;border-left:3px solid var(--border2);margin-bottom:12px}
+/* Choices */
+.choice-btn{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--text);text-align:left;margin-bottom:8px;cursor:pointer;line-height:1.4;display:block}
+.choice-btn:active{background:var(--bg4)}
+.choice-btn.hot{border-color:#D4537E;border-left:3px solid #D4537E}
+.choice-btn.risk{border-color:var(--red);border-left:3px solid var(--red)}
+.choice-btn.sport{border-color:var(--green);border-left:3px solid var(--green)}
+/* Cards */
+.card{background:var(--bg2);border-radius:14px;padding:14px;margin-bottom:10px}
+.card h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:10px}
+/* Person rows */
+.person-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.person-row:last-child{border-bottom:none}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.person-info{flex:1;min-width:0}
+.person-name{font-size:14px;font-weight:500;color:var(--text)}
+.person-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4}
+.person-meta{font-size:11px;color:var(--text3);margin-top:4px}
+/* Pills */
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;margin:2px}
+.pr{background:#3d1515;color:#f7a0a0}.pg{background:#153d15;color:#90d090}.pb{background:#152040;color:#90b8f0}.pa{background:#3d2d10;color:#f0c070}.pp{background:#3d1530;color:#f0b0d0}.pt{background:#103d2d;color:#90d0b8}.pn{background:#2a2a2a;color:#909090}
+/* Shop */
+.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.shop-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.shop-item.owned{border-color:var(--green);background:#0a1f18}
+.shop-item .si-icon{font-size:22px}
+.shop-item .si-name{font-size:12px;font-weight:500;color:var(--text);line-height:1.3}
+.shop-item .si-price{font-size:11px;color:var(--text3)}
+.si-btn{margin-top:4px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg4);color:var(--text);cursor:pointer}
+.si-btn:active{background:var(--border)}
+.si-btn:disabled{opacity:.3;cursor:not-allowed}
+/* Transfer card */
+.tx-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px}
+.tx-card.big{border-color:var(--amber);background:#2a1f08}
+/* City card */
+.city-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px}
+.city-card.here{border-color:var(--green);background:#0a1f18}
+/* Career path */
+.cp-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);margin-bottom:6px;font-size:13px}
+.cp-item.done{background:var(--bg3)}
+.cp-item.cur{border-color:var(--green);background:#0a1f18}
+.cp-dot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0}
+.cp-item.done .cp-dot,.cp-item.cur .cp-dot{background:var(--green)}
+/* Wealth bar */
+.wealth-bar{height:6px;background:var(--bg4);border-radius:3px;margin:6px 0 4px}
+.wealth-fill{height:6px;border-radius:3px;background:var(--amber);transition:width .5s}
+/* Injury */
+.inj-bar{height:6px;background:var(--bg4);border-radius:3px;margin:5px 0 3px}
+.inj-fill{height:6px;border-radius:3px;background:var(--red)}
+/* Match UI */
+.match-score{background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:12px;text-align:center}
+.match-score-num{font-size:32px;font-weight:700;color:var(--text)}
+.match-score-teams{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px}
+.match-commentary{font-size:12px;color:var(--text2);font-style:italic;margin-top:6px;min-height:18px}
+.match-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.match-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 8px;font-size:13px;color:var(--text);cursor:pointer;text-align:center;line-height:1.3}
+.match-btn:active{background:var(--bg4)}
+.match-btn.key{border-color:var(--green);color:var(--green);font-weight:500}
+/* Create screen */
+.create-field{margin-bottom:14px}
+.create-label{font-size:12px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+input[type=text],select{width:100%;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);-webkit-appearance:none;appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.nat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.nat-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px}
+.nat-card.sel{border-color:var(--green);background:#0a1f18}
+.sport-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.sport-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.sport-card.sel{border-color:var(--green);background:#0a1f18}
+.sport-card .s-icon{font-size:22px}
+.sport-card .s-name{font-size:13px;font-weight:500;color:var(--text)}
+.sport-card .s-desc{font-size:11px;color:var(--text3)}
+.start-btn{width:100%;background:var(--green);border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:600;color:#fff;cursor:pointer;margin-top:4px}
+.start-btn:active{background:#178a63}
+/* Log */
+.log-entry{font-size:13px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border)}
+.log-entry:last-child{border-bottom:none}
+.log-age{font-size:11px;color:var(--text3);margin-right:5px}
+/* Award */
+.award-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)}
+.award-row:last-child{border-bottom:none}
+.award-icon{font-size:20px;min-width:24px}
+/* Action btns */
+.action-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);cursor:pointer;display:inline-block;margin-right:6px;margin-bottom:6px}
+.action-btn:active{background:var(--bg4)}
+/* End screen */
+.end-stat{font-size:13px;color:var(--text2);padding:4px 0;display:flex;justify-content:space-between}
+.end-stat span{color:var(--text);font-weight:500}
+/* Owned tags */
+.owned-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.owned-tag{font-size:11px;padding:3px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+/* Notification toast */
+.toast{position:fixed;bottom:calc(60px + var(--safe-bot) + 10px);left:14px;right:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--text);z-index:999;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+/* Scrollbar */
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- CREATE SCREEN -->
+<div id="sc-create" class="screen active" style="overflow-y:auto">
+<div class="content" style="padding-bottom:30px">
+<div style="text-align:center;padding:20px 0 16px">
+<div style="font-size:48px">🌍</div>
+<h1 style="font-size:24px;font-weight:700;margin-top:8px">Life Sim</h1>
+<p style="font-size:14px;color:var(--text2);margin-top:4px">Every choice shapes everything</p>
+</div>
+<div class="create-field">
+<div class="create-label">👤 Your name</div>
+<input type="text" id="i-name" placeholder="Enter your name" maxlength="22"/>
+</div>
+<div class="create-field">
+<div class="create-label">⚧ Gender</div>
+<select id="i-gender">
+<option value="male">Male</option>
+<option value="female">Female</option>
+<option value="nonbinary">Non-binary</option>
+</select>
+</div>
+<div class="create-field">
+<div class="create-label">🌐 Nationality</div>
+<div class="nat-grid" id="nat-grid"></div>
+</div>
+<div class="create-field">
+<div class="create-label">🏠 Background</div>
+<select id="i-bg">
+<option value="working">💪 Working class</option>
+<option value="middle">🏡 Middle class</option>
+<option value="upper">💎 Upper class</option>
+</select>
+</div>
+<div class="create-field">
+<div class="create-label">🏆 Sport</div>
+<div class="sport-grid" id="sport-grid"></div>
+</div>
+<div class="create-field">
+<div class="create-label">👨‍👩‍👦 Family</div>
+<select id="i-fam">
+<option value="stepmom">👨‍👩‍👦 Dad + stepmom</option>
+<option value="both">👨‍👩‍👦 Both parents</option>
+<option value="single">👩‍👦 Single mom</option>
+<option value="grandparents">👴👵 Grandparents</option>
+</select>
+</div>
+<button class="start-btn" onclick="startGame()">✨ Begin your life →</button>
+</div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="sc-game" class="screen">
+<div class="top-bar">
+<h1 id="g-name">—</h1>
+<div class="sub" id="g-sub">—</div>
+</div>
+<div class="stat-row" id="stat-row" style="padding:10px 14px 0;flex-shrink:0"></div>
+<div class="content" id="main-content"></div>
+<div class="bottom-nav" id="bottom-nav">
+<button class="nav-btn on" onclick="swTab('events',this)" data-tab="events"><span class="ico">📋</span>Events</button>
+<button class="nav-btn" onclick="swTab('sport',this)" data-tab="sport"><span class="ico">🏆</span>Sport</button>
+<button class="nav-btn" onclick="swTab('transfers',this)" data-tab="transfers"><span class="ico">✈️</span>Moves</button>
+<button class="nav-btn" onclick="swTab('lifestyle',this)" data-tab="lifestyle"><span class="ico">💸</span>Life</button>
+<button class="nav-btn" onclick="swTab('people',this)" data-tab="people"><span class="ico">❤️</span>People</button>
+<button class="nav-btn" onclick="swTab('more',this)" data-tab="more"><span class="ico">⋯</span>More</button>
+</div>
+</div>
+
+<!-- MATCH SCREEN -->
+<div id="sc-match" class="screen">
+<div class="top-bar">
+<h1 id="m-title">Match</h1>
+<div class="sub" id="m-ctx">—</div>
+</div>
+<div class="content">
+<div class="match-score">
+<div class="match-score-teams">
+<span id="m-home">Home</span>
+<span id="m-away">Away</span>
+</div>
+<div class="match-score-num" id="m-score">0 — 0</div>
+<div style="font-size:12px;color:var(--text3)">⏱ min <span id="m-min">0</span></div>
+<div class="match-commentary" id="m-com">Match underway...</div>
+</div>
+<h3 style="font-size:15px;font-weight:600;margin-bottom:8px" id="m-sit">—</h3>
+<div class="ev-body" id="m-desc"></div>
+<div class="match-actions" id="m-actions"></div>
+</div>
+</div>
+
+<!-- END SCREEN -->
+<div id="sc-end" class="screen" style="overflow-y:auto">
+<div class="content" style="padding-bottom:30px">
+<div style="text-align:center;padding:20px 0 14px">
+<div style="font-size:44px" id="end-emoji">⭐</div>
+<h2 style="font-size:20px;font-weight:700;margin-top:8px" id="end-title">Life ended</h2>
+</div>
+<div class="card">
+<p style="font-size:14px;color:var(--text2);line-height:1.65" id="end-body"></p>
+</div>
+<div class="card" id="end-stats-card"></div>
+<div class="card" id="end-assets-card" style="display:none"></div>
+<div id="end-children-area"></div>
+<button class="start-btn" onclick="resetGame()" style="margin-top:8px">🔄 Start a new life</button>
+</div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SEASONS=['🌸 Spring','☀️ Summer','🍂 Autumn','❄️ Winter'];
+const STATMETA=[{k:'happy',l:'😊',c:'#1D9E75'},{k:'health',l:'💪',c:'#378ADD'},{k:'money',l:'💰',c:'#BA7517'},{k:'social',l:'🤝',c:'#D4537E'},{k:'career',l:'📈',c:'#7F77DD'},{k:'fame',l:'⭐',c:'#EF9F27'}];
+const AVC=[['#1a2a3a','#90b8f0'],['#3a1a2a','#f0b0d0'],['#1a3a1a','#90d090'],['#3a2a10','#f0c070'],['#2a1a3a','#c0b8f0'],['#3a1a10','#f0c0a0']];
+
+const NATS=[
+{id:'egyptian',l:'Egyptian',f:'🇪🇬',city:'Cairo'},
+{id:'nigerian',l:'Nigerian',f:'🇳🇬',city:'Lagos'},
+{id:'english',l:'English',f:'🇬🇧',city:'London'},
+{id:'american',l:'American',f:'🇺🇸',city:'Chicago'},
+{id:'brazilian',l:'Brazilian',f:'🇧🇷',city:'Rio'},
+{id:'french',l:'French',f:'🇫🇷',city:'Paris'},
+{id:'spanish',l:'Spanish',f:'🇪🇸',city:'Madrid'},
+{id:'argentinian',l:'Argentinian',f:'🇦🇷',city:'Buenos Aires'},
+{id:'jamaican',l:'Jamaican',f:'🇯🇲',city:'Kingston'},
+{id:'ghanaian',l:'Ghanaian',f:'🇬🇭',city:'Accra'},
+];
+const SPORTS=[
+{id:'none',icon:'💼',name:'General career',desc:'No sport'},
+{id:'soccer',icon:'⚽',name:'Soccer',desc:'Academy → world stage'},
+{id:'basketball',icon:'🏀',name:'Basketball',desc:'Streets → NBA'},
+{id:'football',icon:'🏈',name:'Football',desc:'Pop Warner → NFL'},
+];
+const CLUBS={
+soccer:{
+t1:[{n:'Al Ahly',city:'Cairo',f:'🇪🇬',w:30000},{n:'Enyimba FC',city:'Lagos',f:'🇳🇬',w:25000},{n:'Flamengo',city:'Rio',f:'🇧🇷',w:80000},{n:'River Plate',city:'Buenos Aires',f:'🇦🇷',w:60000}],
+t2:[{n:'FC Basel',city:'Basel',f:'🇨🇭',w:180000},{n:'Red Bull Salzburg',city:'Salzburg',f:'🇦🇹',w:200000},{n:'Anderlecht',city:'Brussels',f:'🇧🇪',w:220000}],
+t3:[{n:'Fiorentina',city:'Rome',f:'🇮🇹',w:600000},{n:'Valencia CF',city:'Valencia',f:'🇪🇸',w:700000},{n:'Lyon',city:'Paris',f:'🇫🇷',w:800000}],
+t4:[{n:'AS Roma',city:'Rome',f:'🇮🇹',w:2000000},{n:'Atletico Madrid',city:'Madrid',f:'🇪🇸',w:3000000},{n:'PSG',city:'Paris',f:'🇫🇷',w:5000000}],
+t5:[{n:'Liverpool FC',city:'Liverpool',f:'🇬🇧',w:8000000},{n:'FC Barcelona',city:'Barcelona',f:'🇪🇸',w:9000000},{n:'Real Madrid',city:'Madrid',f:'🇪🇸',w:10000000},{n:'Bayern Munich',city:'Munich',f:'🇩🇪',w:8500000}],
+late:[{n:'Al Nassr',city:'Riyadh',f:'🇸🇦',w:35000000},{n:'Inter Miami',city:'Miami',f:'🇺🇸',w:12000000}],
+},
+basketball:{t1:[{n:'College team',city:'USA',f:'🇺🇸',w:0}],t2:[{n:'G-League',city:'USA',f:'🇺🇸',w:120000}],t3:[{n:'NBA bench',city:'USA',f:'🇺🇸',w:2000000}],t4:[{n:'NBA starter',city:'USA',f:'🇺🇸',w:12000000}],t5:[{n:'NBA All-Star',city:'USA',f:'🇺🇸',w:35000000}],late:[{n:'Overseas farewell',city:'Europe',f:'🌍',w:5000000}]},
+football:{t1:[{n:'HS/College',city:'USA',f:'🇺🇸',w:0}],t2:[{n:'NFL practice squad',city:'USA',f:'🇺🇸',w:300000}],t3:[{n:'NFL starter',city:'USA',f:'🇺🇸',w:5000000}],t4:[{n:'NFL Pro Bowl',city:'USA',f:'🇺🇸',w:18000000}],t5:[{n:'NFL franchise player',city:'USA',f:'🇺🇸',w:35000000}],late:[{n:'Final NFL contract',city:'USA',f:'🇺🇸',w:8000000}]},
+};
+const CITIES=[
+{id:'cairo',n:'Cairo',f:'🇪🇬',v:'Loud, beautiful chaos. Family everywhere.',tax:.22,l:1200},
+{id:'london',n:'London',f:'🇬🇧',v:'Grey skies, world-class everything.',tax:.45,l:3800},
+{id:'barcelona',n:'Barcelona',f:'🇪🇸',v:'Sunshine and the best food in the world.',tax:.24,l:2800},
+{id:'madrid',n:'Madrid',f:'🇪🇸',v:'Royal, loud, passionate.',tax:.24,l:2600},
+{id:'paris',n:'Paris',f:'🇫🇷',v:'Fashion, food, tension.',tax:.45,l:3500},
+{id:'dubai',n:'Dubai',f:'🇦🇪',v:'Zero tax. Desert heat. Scale.',tax:0,l:4000},
+{id:'riyadh',n:'Riyadh',f:'🇸🇦',v:'Enormous money, quiet power.',tax:0,l:3200},
+{id:'miami',n:'Miami',f:'🇺🇸',v:'Heat, art, the best sunset on earth.',tax:.37,l:3800},
+{id:'lagos',n:'Lagos',f:'🇳🇬',v:'Raw energy, music, family ties.',tax:.24,l:1000},
+{id:'nyc',n:'New York',f:'🇺🇸',v:'The city that never sleeps.',tax:.4,l:5000},
+];
+const INJURIES=[
+{id:'minor',n:'Minor knock',sev:1,d:'Bruised or sprained. A week out.',hd:8,cd:0,wks:2},
+{id:'ham',n:'Hamstring tear',sev:2,d:'Six to eight weeks. Could recur if rushed.',hd:18,cd:5,wks:8},
+{id:'acl',n:'ACL tear 😰',sev:3,d:'Nine to twelve months. The big one.',hd:35,cd:15,wks:40},
+{id:'frac',n:'Leg fracture',sev:3,d:'Three to six months. Needs perfect rehab.',hd:28,cd:10,wks:20},
+];
+const CARS=[{id:'beater',n:'Used Honda Civic',e:'🚗',p:8000,mo:200,hFx:2,fFx:0,t:1},{id:'bmw',n:'BMW 3 Series',e:'🚘',p:45000,mo:800,hFx:5,fFx:3,t:2},{id:'merc',n:'Mercedes G-Wagon',e:'🚙',p:180000,mo:2200,hFx:10,fFx:8,t:3},{id:'lambo',n:'Lamborghini Urus',e:'🏎',p:380000,mo:5000,hFx:14,fFx:14,t:4},{id:'rolls',n:'Rolls-Royce Phantom',e:'👑',p:650000,mo:8000,hFx:18,fFx:20,t:5},{id:'bugatti',n:'Bugatti Chiron',e:'⚡',p:3500000,mo:18000,hFx:22,fFx:28,t:6}];
+const PROPS=[{id:'studio',n:'Studio apartment',e:'🏠',p:120000,hFx:5,fFx:0,rent:0},{id:'flat',n:'City apartment',e:'🏢',p:380000,hFx:10,fFx:2,rent:0},{id:'house',n:'Suburban house',e:'🏡',p:750000,hFx:14,fFx:3,rent:0},{id:'mansion',n:'Mansion',e:'🏰',p:3500000,hFx:20,fFx:10,rent:0},{id:'compound',n:'Private compound',e:'🏯',p:12000000,hFx:26,fFx:20,rent:0},{id:'rental1',n:'Rental property',e:'🔑',p:450000,hFx:5,fFx:0,rent:3500},{id:'rental2',n:'Apartment block',e:'🏗',p:2800000,hFx:8,fFx:5,rent:18000},{id:'villa',n:'Holiday villa',e:'🌴',p:2200000,hFx:18,fFx:12,rent:0}];
+const EXPS=[{id:'ibiza',n:'Ibiza weekend',e:'🎉',p:18000,hFx:12,fFx:8,sFx:10,hlFx:-5},{id:'dubai_t',n:'Dubai trip',e:'🌆',p:35000,hFx:15,fFx:10,sFx:8,hlFx:0},{id:'maldives',n:'Maldives',e:'🏝',p:28000,hFx:18,fFx:5,sFx:5,hlFx:6},{id:'safari',n:'African safari',e:'🦁',p:40000,hFx:20,fFx:6,sFx:5,hlFx:8},{id:'yacht',n:'Yacht week',e:'⛵',p:280000,hFx:22,fFx:18,sFx:15,hlFx:5},{id:'jet',n:'Private jet',e:'✈️',p:120000,hFx:15,fFx:15,sFx:8,hlFx:0}];
+const NIGHTS=[{id:'vip',n:'VIP club night',e:'🎶',p:5000,hFx:8,fFx:5,sFx:8,hlFx:-3},{id:'appear',n:'Club appearance',e:'🎤',p:0,hFx:5,fFx:10,sFx:8,hlFx:-2,earn:50000,mf:40},{id:'dinner',n:'Michelin dinner',e:'🍽',p:3500,hFx:10,fFx:3,sFx:6,hlFx:0},{id:'casino',n:'Casino night',e:'🎰',p:0,casino:true,hFx:0,fFx:5,sFx:8,hlFx:-2},{id:'party',n:'Host a party',e:'🥂',p:80000,hFx:10,fFx:8,sFx:15,hlFx:-5}];
+const GIFTS=[{id:'flowers',n:'Flowers & dinner',e:'💐',p:800,bFx:8},{id:'jewelry',n:'Jewelry',e:'💎',p:12000,bFx:18},{id:'bag',n:'Designer bag',e:'👜',p:8000,bFx:15},{id:'home_g',n:'Send money home',e:'🏠',p:20000,bFx:20,hFx:12,fam:true}];
+const NPC_POOL={
+stepmom:[{name:'Linda',age:39,g:'f',desc:'👀 Blue eyes, 5\'2", brunette. Full hips, prominent backside, naturally curvy.'},{name:'Vanessa',age:37,g:'f',desc:'💚 Green eyes, 5\'4", blonde, slim waist, full chest and rear.'},{name:'Diana',age:41,g:'f',desc:'🖤 Dark brown eyes, 5\'3", black hair. Wide hips, full figure.'}],
+mother:[{name:'Fatima',age:43,g:'f',desc:'🤍 Brown eyes, 5\'4", warm smile. Would sacrifice anything for you.'},{name:'Angela',age:42,g:'f',desc:'💛 Hazel eyes, 5\'6", natural curls. Raised you on grit and faith.'}],
+father:[{name:'Hassan',age:47,g:'m',desc:'💪 Dark eyes, 6\'1", broad shoulders. Man of few words.'},{name:'Ray',age:46,g:'m',desc:'🧔 Brown eyes, 6\'0", full beard. Tough love only.'}],
+friend_m:[{name:'Kareem',age:18,g:'m',desc:'🏃 5\'11", lean, dark skin. First person who believed in you.'},{name:'Darius',age:18,g:'m',desc:'😄 6\'0", athletic. Loyal to a fault.'}],
+friend_f:[{name:'Aaliyah',age:18,g:'f',desc:'✨ 5\'7", natural hair. Straight A\'s and still the most interesting person in any room.'},{name:'Jade',age:18,g:'f',desc:'💬 5\'5", locs, full lips. Tells you the truth.'}],
+grandparent:[{name:'Gran',age:68,g:'f',desc:'👓 Petite, silver hair. Has seen everything.'}],
+};
+const TM_POOL=[
+{name:'Carlos',pos:'⚽ MF',age:22,desc:'5\'10", compact and quick.',loy:70,chem:60,partner:{name:'Bianca',desc:'5\'6", olive skin, dark curls, full figure.',secret:false}},
+{name:'Ahmed',pos:'⚽ ST',age:24,desc:'6\'1", lean, fast, deadly.',loy:80,chem:75,partner:null},
+{name:'Diallo',pos:'⚽ CB',age:26,desc:'6\'2", powerful. Five years in Europe.',loy:65,chem:65,partner:{name:'Sofia',desc:'5\'9", Brazilian, caramel skin, long legs.',secret:false}},
+{name:'Javi',pos:'⚽ WG',age:21,desc:'5\'8", Spanish, technically gifted.',loy:70,chem:80,partner:null},
+{name:'Marcus',pos:'🏀 PG',age:23,desc:'6\'1", flashy and usually right.',loy:60,chem:72,partner:{name:'Kezia',desc:'5\'7", dark skin, natural locs, full lips.',secret:false}},
+{name:'DeShawn',pos:'🏀 C',age:25,desc:'6\'10", gentle off court.',loy:85,chem:68,partner:null},
+{name:'Tyler',pos:'🏈 QB',age:24,desc:'6\'3", cannon arm, chess mind.',loy:55,chem:62,partner:{name:'Ashley',desc:'5\'5", blonde, green eyes, curvy.',secret:false}},
+{name:'Donte',pos:'🏈 WR',age:22,desc:'6\'0", electric. Fastest person you know.',loy:75,chem:78,partner:null},
+];
+
+let G={},selNat='egyptian',selSport='soccer',MS={},curTab='events';
+const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const cl=(v,mn=0,mx=100)=>Math.max(mn,Math.min(mx,Math.round(v)));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const fmt=n=>{n=Math.round(n);if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1000)return'$'+Math.round(n/1000)+'k';return'$'+n;};
+const hs=g=>g==='male'?'his':g==='female'?'her':'their';
+const hm=g=>g==='male'?'him':g==='female'?'her':'them';
+const wt=c=>{if(c>=1e9)return{l:'🤑 Billionaire',p:100};if(c>=1e8)return{l:'💎 Ultra rich',p:88};if(c>=1e7)return{l:'💰 Super rich',p:74};if(c>=1e6)return{l:'🏆 Millionaire',p:58};if(c>=500000)return{l:'✅ Wealthy',p:46};if(c>=100000)return{l:'😊 Comfortable',p:34};if(c>=25000)return{l:'📊 Stable',p:22};return{l:'😬 Getting by',p:10};};
+
+function buildUI(){
+  document.getElementById('nat-grid').innerHTML=NATS.map(n=>`<div class="nat-card${n.id===selNat?' sel':''}" onclick="selN('${n.id}',this)">${n.f} ${n.l}</div>`).join('');
+  document.getElementById('sport-grid').innerHTML=SPORTS.map(s=>`<div class="sport-card${s.id===selSport?' sel':''}" onclick="selS('${s.id}',this)"><div class="s-icon">${s.icon}</div><div class="s-name">${s.name}</div><div class="s-desc">${s.desc}</div></div>`).join('');
+}
+function selN(id,el){selNat=id;document.querySelectorAll('.nat-card').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+function selS(id,el){selSport=id;document.querySelectorAll('.sport-card').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+buildUI();
+
+function mkNPC(role){const pool=NPC_POOL[role]||NPC_POOL.friend_m;const p=pick(pool);return{...p,role,love:50,trust:60,secret:false,caught:false,broken:false,id:Math.random().toString(36).slice(2)};}
+
+function startGame(){
+  const name=document.getElementById('i-name').value.trim()||'Jordan';
+  const gender=document.getElementById('i-gender').value;
+  const bg=document.getElementById('i-bg').value;
+  const fam=document.getElementById('i-fam').value;
+  const nat=NATS.find(n=>n.id===selNat)||NATS[0];
+  G={name,gender,bg,fam,sport:selSport,nat:nat.id,natL:nat.l,natF:nat.f,homeCity:nat.city,curCity:nat.city,
+  age:18,year:1,sIdx:0,gen:1,
+  happy:58,health:72,money:bg==='upper'?75:bg==='middle'?50:24,social:58,career:bg==='upper'?42:bg==='middle'?28:18,fame:0,
+  cash:bg==='upper'?95000:bg==='middle'?28000:7500,
+  log:[],awards:[],children:[],npcs:[],teammates:[],
+  partner:null,usedEvs:[],
+  sLvl:0,cs:{goals:0,trophies:0,comebacks:0,wins:0},
+  season:{wins:0,losses:0,goals:0,pts:0,tds:0},
+  retired:false,pendingEv:null,coach:false,
+  club:selSport==='soccer'?'⚽ Local youth club':selSport==='basketball'?'🏀 Street courts':selSport==='football'?'🏈 Youth league':'💼 Career',
+  clubHistory:[],offers:[],injury:null,rehab:0,
+  cities:[nat.city],
+  assets:{car:null,props:[],spend:0,rental:0},
+  };
+  if(fam==='stepmom'){G.npcs.push(mkNPC('stepmom'));G.npcs.push(mkNPC('father'));}
+  else if(fam==='both'){G.npcs.push(mkNPC('mother'));G.npcs.push(mkNPC('father'));}
+  else if(fam==='single'){G.npcs.push(mkNPC('mother'));}
+  else G.npcs.push(mkNPC('grandparent'));
+  G.npcs.push(mkNPC(gender==='female'?'friend_f':'friend_m'));
+  if(selSport!=='none'){const sp=selSport==='soccer'?['Carlos','Ahmed','Diallo','Javi']:selSport==='basketball'?['Marcus','DeShawn']:['Tyler','Donte'];G.teammates=TM_POOL.filter(t=>sp.includes(t.name)).map(t=>({...t,partner:t.partner?{...t.partner}:null}));}
+  saveGame();showScreen('sc-game');renderHdr();renderStats();swTab('events',document.querySelector('.nav-btn'));nextEvent();
+}
+
+function showScreen(id){['sc-create','sc-game','sc-match','sc-end'].forEach(s=>{const el=document.getElementById(s);if(el)el.className='screen'+(s===id?' active':'');});}
+
+function swTab(n,el){
+  curTab=n;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderTab(n);
+}
+
+function renderHdr(){
+  const si={none:'💼',soccer:'⚽',basketball:'🏀',football:'🏈'}[G.sport];
+  document.getElementById('g-name').textContent=G.name+' '+G.natF;
+  document.getElementById('g-sub').textContent=`🎂 Age ${G.age} · ${SEASONS[G.sIdx]} · ${si} ${G.club.replace(/[⚽🏀🏈💼]\s*/,'')} · 📍 ${G.curCity}${G.retired?' · 🎖 Retired':''}${G.injury?' · 🤕 '+G.injury.n:''}`;
+}
+
+function renderStats(){
+  renderHdr();
+  document.getElementById('stat-row').innerHTML=STATMETA.map(s=>{
+    const v=cl(s.k==='money'?G.money:G[s.k]);
+    const disp=s.k==='money'?fmt(G.cash):v;
+    return`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-val">${disp}</div><div class="stat-bar"><div class="stat-bar-fill" style="width:${v}%;background:${s.c}"></div></div></div>`;
+  }).join('');
+}
+
+function renderTab(n){
+  const c=document.getElementById('main-content');
+  if(n==='events')renderEvents(c);
+  else if(n==='sport')renderSport(c);
+  else if(n==='transfers')renderTransfers(c);
+  else if(n==='lifestyle')renderLifestyle(c);
+  else if(n==='people')renderPeople(c);
+  else if(n==='more')renderMore(c);
+}
+
+function renderEvents(c){
+  if(!G.pendingEv){c.innerHTML='<div class="card"><p style="color:var(--text2);font-size:14px">Loading next event...</p></div>';return;}
+  const ev=G.pendingEv;
+  c.innerHTML=`<div class="ev-card">
+<div class="ev-tag">${ev.ctx||'📋 Life event'}</div>
+<div class="ev-title">${ev.title}</div>
+<div class="ev-body">${typeof ev.text==='function'?ev.text(G):ev.text}</div>
+<div id="choice-list">${ev.choices.map((ch,i)=>`<button class="choice-btn${ch.style?' '+ch.style:''}" onclick="choose(${i})">${ch.l}</button>`).join('')}</div>
+</div>`;
+}
+
+function renderSport(c){
+  const paths={soccer:[{l:0,c:'⚽ Local youth club'},{l:1,c:'🏟 National academy'},{l:2,c:'✍️ First pro contract'},{l:3,c:'🇪🇺 Europe (small)'},{l:4,c:'⭐ Breakthrough club'},{l:5,c:'🏆 Elite club'},{l:6,c:'🐐 Legend'}],basketball:[{l:0,c:'🏀 Street courts'},{l:1,c:'🏫 HS varsity'},{l:2,c:'🎓 College'},{l:3,c:'📋 G-League'},{l:4,c:'🏀 NBA bench'},{l:5,c:'⭐ NBA star'},{l:6,c:'🐐 Legend'}],football:[{l:0,c:'🏈 Youth league'},{l:1,c:'🏫 HS varsity'},{l:2,c:'🎓 College'},{l:3,c:'📋 NFL entry'},{l:4,c:'🏈 NFL starter'},{l:5,c:'⭐ Pro Bowl'},{l:6,c:'🐐 Legend'}]};
+  const path=G.sport==='none'?[]:paths[G.sport]||[];
+  const s=G.season;
+  const injHtml=G.injury?`<div style="background:#3d1515;border-radius:10px;padding:12px;margin-top:10px"><div style="font-size:13px;font-weight:600;color:#f7a0a0">🤕 ${G.injury.n}</div><div style="font-size:12px;color:#f7a0a0;margin-top:3px">${G.injury.d}</div><div class="inj-bar"><div class="inj-fill" style="width:${Math.round(G.rehab/G.injury.wks*100)}%"></div></div><div style="font-size:11px;color:#f7a0a0">${Math.round(G.rehab/G.injury.wks*100)}% recovered</div></div>`:'';
+  const btns=[
+    !G.retired&&G.sLvl>=2&&G.age>=28?`<button class="action-btn" onclick="earlyRetire()">🎖 Early retire</button>`:'',
+    !G.retired&&!G.injury?`<button class="action-btn" onclick="doInjury()">⚠️ Injury risk</button>`:'',
+    G.retired?`<button class="action-btn" onclick="doComeback()">🔥 Comeback?</button>`:'',
+  ].filter(Boolean).join('');
+  c.innerHTML=`<div class="card"><h3>🏆 Career path ${G.cs.comebacks>0?`<span style="font-size:12px;color:var(--gold)">🔥 ${G.cs.comebacks} comeback${G.cs.comebacks>1?'s':''}</span>`:''}</h3>${path.map(p=>{const done=G.sLvl>p.l,cur=G.sLvl===p.l;return`<div class="cp-item${done?' done':cur?' cur':''}"><div class="cp-dot"></div><div style="font-size:13px;color:var(--text)">${p.c}</div>${done?'<span class="pill pg" style="margin-left:auto">✅</span>':cur?'<span class="pill pt" style="margin-left:auto">▶️</span>':''}</div>`;}).join('')}<div style="font-size:12px;color:var(--text2);margin-top:8px">📊 ${s.wins}W — ${s.losses}L · ${G.sport==='soccer'?'⚽ '+s.goals+' goals':G.sport==='basketball'?'🏀 '+s.pts+' pts':'🏈 '+s.tds+' TDs'} · 🏆 ${G.cs.trophies} trophies</div>${injHtml}<div style="margin-top:10px">${btns}</div></div>
+<div class="card"><h3>🌍 Awards (${G.awards.length})</h3><div style="max-height:250px;overflow-y:auto">${G.awards.length?G.awards.slice().reverse().map(a=>`<div class="award-row"><div class="award-icon">${a.icon}</div><div><div style="font-size:13px;font-weight:500;color:var(--text)">${a.title}</div><div style="font-size:11px;color:var(--text2)">Age ${a.age} · ${a.desc}</div></div></div>`).join(''):'<p style="font-size:13px;color:var(--text2)">Nothing yet.</p>'}</div></div>
+<div class="card"><h3>📖 Life log</h3><div style="max-height:200px;overflow-y:auto">${G.log.slice().reverse().slice(0,30).map(e=>`<div class="log-entry"><span class="log-age">age ${e.age}</span>${e.text}</div>`).join('')}</div></div>`;
+}
+
+function genOffers(){
+  if(G.sport==='none'||G.retired)return[];
+  const tk=G.sLvl<=1?'t1':G.sLvl===2?'t2':G.sLvl===3?'t3':G.sLvl===4?'t4':'t5';
+  const pool=(CLUBS[G.sport]||{});
+  const base=pool[tk]||[];
+  const late=G.age>=32&&G.sLvl>=4?pool.late||[]:[];
+  return[...base,...late].filter(c=>c.n!==G.club.replace(/[⚽🏀🏈💼⭐]\s*/,'')).slice(0,3).map(c=>({club:c.n,city:c.city,f:c.f,wage:Math.round(c.w*(0.85+Math.random()*0.3)),fee:G.sLvl>=3?Math.round(c.w*(2+Math.random()*3)):0}));
+}
+
+function renderTransfers(c){
+  const offers=G.offers.length?G.offers:genOffers();G.offers=offers;
+  const histHtml=G.clubHistory.length?G.clubHistory.map(h=>`<div style="font-size:13px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">${h.club} · ${h.city} <span style="color:var(--text3)">age ${h.age}</span></div>`).join(''):'<p style="font-size:13px;color:var(--text2)">No transfers yet.</p>';
+  if(G.retired){c.innerHTML=`<div class="card"><h3>🔄 Comeback available</h3><p style="font-size:13px;color:var(--text2);margin-bottom:10px">Teams still want you. Your legend status opens doors.</p><button class="action-btn" onclick="doComeback()">🔥 Consider a comeback</button></div><div class="card"><h3>📋 Club history</h3>${histHtml}</div>`;return;}
+  const offHtml=offers.length?offers.map((o,i)=>`<div class="tx-card${o.wage>5000000?' big':''}"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div style="font-size:14px;font-weight:600;color:var(--text)">${o.f} ${o.club}</div><div style="font-size:12px;color:var(--text2)">📍 ${o.city}</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:600;color:var(--text)">💰 ${fmt(o.wage)}/yr</div>${o.fee>0?`<div style="font-size:11px;color:var(--text2)">Fee: ${fmt(o.fee)}</div>`:''}</div></div><div style="display:flex;gap:6px;margin-top:10px"><button class="action-btn" style="flex:1;text-align:center;margin:0" onclick="acceptTx(${i})">✅ Accept</button><button class="action-btn" style="flex:1;text-align:center;margin:0" onclick="negTx(${i})">💬 Negotiate</button><button class="action-btn" style="flex:1;text-align:center;margin:0" onclick="rejectTx(${i})">❌ Decline</button></div></div>`).join(''):'<p style="font-size:13px;color:var(--text2)">📭 No offers right now. Perform well to attract interest.</p>';
+  c.innerHTML=`<div class="card"><h3>✈️ Transfer market</h3><div style="font-size:12px;color:var(--text2);margin-bottom:10px">Current: ${G.club} · Level ${G.sLvl}</div>${offHtml}<div style="margin-top:8px"><button class="action-btn" onclick="refreshOffers()">🔄 Refresh</button><button class="action-btn" onclick="forceTransfer()">📝 Request transfer</button></div></div>
+<div class="card"><h3>🌍 Cities visited</h3>${CITIES.map(city=>{const here=city.n===G.curCity;const vis=G.cities.includes(city.n)||G.cities.includes(city.id);return`<div class="city-card${here?' here':''}"><div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:14px;font-weight:500;color:var(--text)">${city.f} ${city.n} ${here?'📍':vis?'✅':''}</div><div style="font-size:11px;color:var(--text2)">${city.v}</div><div style="font-size:11px;color:var(--text3)">Tax ${Math.round(city.tax*100)}% · $${city.l}/mo living</div></div>${!here?`<button class="action-btn" style="margin:0;font-size:12px" onclick="visitCity('${city.id}')">Visit</button>`:''}</div></div>`;}).join('')}</div>
+<div class="card"><h3>📋 Club history</h3>${histHtml}</div>`;
+}
+
+function acceptTx(i){const o=G.offers[i];if(!o)return;const old=G.club;G.clubHistory.push({club:old,age:G.age,city:G.curCity});G.club=o.club;G.curCity=o.city;if(!G.cities.includes(o.city))G.cities.push(o.city);G.cash+=Math.round(o.wage*0.15);G.career=cl(G.career+8);G.fame=cl(G.fame+10);G.offers=[];addLog('✈️ Transferred to '+o.club+' in '+o.city);addAward('✈️','Transfer to '+o.club,'Age '+G.age);renderStats();toast('✈️ Welcome to '+o.city+'!');showEvDirect({title:'🌍 New city, new chapter',ctx:'✈️ Transfer',text:`${G.name} arrives in ${o.city}. New training ground, new teammates, new everything.`,choices:[{l:'✅ Embrace it fully',fx:{happy:12,career:8},log:'Settled into '+o.city+' with enthusiasm'},{l:'🏠 Keep home in your heart',fx:{happy:8,social:10},log:'Adjusted steadily while staying connected to roots'}]});}
+function negTx(i){const o=G.offers[i];if(!o)return;if(Math.random()<0.65){G.offers[i]={...o,wage:Math.round(o.wage*1.2)};toast('💬 Negotiated up to '+fmt(G.offers[i].wage)+'/yr');}else{G.offers.splice(i,1);toast('😤 Offer withdrawn after negotiation');}renderTransfers(document.getElementById('main-content'));}
+function rejectTx(i){G.offers.splice(i,1);toast('❌ Offer declined');renderTransfers(document.getElementById('main-content'));}
+function refreshOffers(){G.offers=genOffers();renderTransfers(document.getElementById('main-content'));toast('🔄 Market refreshed');}
+function forceTransfer(){showEvDirect({title:'📝 Transfer request submitted',ctx:'Transfer',text:`${G.name} hands in a transfer request. The club is not happy. Fans react. Media runs with it for a week.`,choices:[{l:'💪 Stand firm — push through',fx:{career:5,social:-10},log:'Forced a transfer request'},{l:'🤝 Withdraw — stay another season',fx:{career:-3,social:8},log:'Withdrew the transfer request'}]});}
+function visitCity(id){const city=CITIES.find(x=>x.id===id);if(!city)return;const cost=Math.round(city.l*0.5);if(G.cash<cost){toast('💸 Need '+fmt(cost)+' for this trip');return;}G.cash-=cost;if(!G.cities.includes(city.n))G.cities.push(city.n);showEvDirect({title:'📍 In '+city.n,ctx:'✈️ Travel',text:`${G.name} in ${city.n}. ${city.v}`,choices:[{l:'🎉 Make the most of it',fx:{happy:12,fame:6,social:8},log:'Visited '+city.n},{l:'😴 Rest and recover',fx:{happy:8,health:10},log:'Rested in '+city.n}]});}
+function doComeback(){showEvDirect({title:'📞 The phone rings',ctx:'🔄 Comeback',text:`${G.name} has been retired. The body feels better than expected. Teams still want ${hm(G.gender)}. Is the fire still there?`,choices:[{l:'🔥 I\'m back — lace them up',fx:{career:15,happy:20,health:-8},log:'🔥 Comeback #'+(G.cs.comebacks+1),cb(G){G.retired=false;G.cs.comebacks++;G.sLvl=Math.max(2,G.sLvl-1);G.club=(G.sport==='soccer'?'⚽':G.sport==='basketball'?'🏀':'🏈')+' Comeback club';addAward('🔥','Comeback #'+G.cs.comebacks,'Returned from retirement — age '+G.age);}},{l:'😌 Stay retired',fx:{happy:10,health:8},log:'Chose to stay retired'}]});}
+
+function renderLifestyle(c){
+  const tw=wt(G.cash);
+  const owned=[];
+  if(G.assets.car){const car=CARS.find(x=>x.id===G.assets.car);if(car)owned.push(car.e+' '+car.n);}
+  G.assets.props.forEach(pid=>{const p=PROPS.find(x=>x.id===pid);if(p)owned.push(p.e+' '+p.n);});
+  c.innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h3>💰 Wealth</h3><div style="font-size:13px;color:var(--text2)">${tw.l}</div></div><div style="font-size:24px;font-weight:700;color:var(--text)">${fmt(G.cash)}</div><div class="wealth-bar"><div class="wealth-fill" style="width:${tw.p}%"></div></div><div style="font-size:11px;color:var(--text3)">Lifetime spent: ${fmt(G.assets.spend)}${G.assets.rental>0?' · 🏠 Rental: +'+fmt(G.assets.rental)+'/mo':''}</div>${owned.length?`<div class="owned-tags">${owned.map(o=>`<div class="owned-tag">${o}</div>`).join('')}</div>`:''}</div>
+<div class="card"><h3>🚗 Cars</h3><div class="shop-grid">${CARS.map(car=>{const own=G.assets.car===car.id;const can=G.cash>=car.p;const ct=G.assets.car?CARS.find(x=>x.id===G.assets.car)?.t||0:0;return`<div class="shop-item${own?' owned':''}"><div class="si-icon">${car.e}</div><div class="si-name">${car.n}</div><div class="si-price">${fmt(car.p)}</div>${own?'<div style="font-size:11px;color:var(--green);margin-top:4px">✅ Current car</div>':`<button class="si-btn" onclick="buyCar('${car.id}')" ${!can||!(car.t>ct)&&G.assets.car?'disabled':''}>${!can?'Need '+fmt(car.p-G.cash)+' more':G.assets.car&&!(car.t>ct)?'Trade in first':'Buy'}</button>`}</div>`;}).join('')}</div></div>
+<div class="card"><h3>🏠 Properties</h3><div class="shop-grid">${PROPS.map(p=>{const own=G.assets.props.includes(p.id);const can=G.cash>=p.p;return`<div class="shop-item${own?' owned':''}"><div class="si-icon">${p.e}</div><div class="si-name">${p.n}</div><div class="si-price">${fmt(p.p)}${p.rent>0?' · +'+fmt(p.rent)+'/mo':''}</div>${own?'<div style="font-size:11px;color:var(--green);margin-top:4px">✅ Owned</div>':`<button class="si-btn" onclick="buyProp('${p.id}')" ${!can?'disabled':''}>${!can?'Need '+fmt(p.p-G.cash)+' more':'Buy'}</button>`}</div>`;}).join('')}</div></div>
+<div class="card"><h3>✈️ Experiences</h3><div class="shop-grid">${EXPS.map(e=>{const can=G.cash>=e.p;return`<div class="shop-item"><div class="si-icon">${e.e}</div><div class="si-name">${e.n}</div><div class="si-price">${fmt(e.p)}</div><button class="si-btn" onclick="buyExp('${e.id}')" ${!can?'disabled':''}>${!can?'Need '+fmt(e.p-G.cash)+' more':'Book'}</button></div>`;}).join('')}</div></div>
+<div class="card"><h3>🎶 Nightlife</h3><div class="shop-grid">${NIGHTS.map(n=>{const cost=n.earn||n.casino?0:Math.abs(n.p||0);const can=n.earn||n.casino?true:G.cash>=cost;const lock=n.mf&&G.fame<n.mf;return`<div class="shop-item"><div class="si-icon">${n.e}</div><div class="si-name">${n.n}</div><div class="si-price">${n.earn?'Earns '+fmt(n.earn):n.casino?'Gamble':fmt(cost)}</div><button class="si-btn" onclick="buyNight('${n.id}')" ${lock||!can?'disabled':''}>${lock?'Need '+n.mf+' fame':n.casino?'Play':n.earn?'Appear':'Go'}</button></div>`;}).join('')}</div></div>
+<div class="card"><h3>🎁 Gifts</h3><div class="shop-grid">${GIFTS.map(g=>{const can=G.cash>=g.p;return`<div class="shop-item"><div class="si-icon">${g.e}</div><div class="si-name">${g.n}</div><div class="si-price">${fmt(g.p)}</div><button class="si-btn" onclick="buyGift('${g.id}')" ${!can?'disabled':''}>${!can?'Need '+fmt(g.p-G.cash)+' more':'Gift'}</button></div>`;}).join('')}</div></div>`;
+}
+
+function buyCar(id){const car=CARS.find(x=>x.id===id);if(!car||G.cash<car.p)return;const old=G.assets.car?CARS.find(x=>x.id===G.assets.car):null;if(old)G.cash+=Math.round(old.p*0.55);G.cash-=car.p;G.assets.car=id;G.assets.spend+=car.p;G.happy=cl(G.happy+car.hFx);G.fame=cl(G.fame+car.fFx);G.money=cl(G.money+2);addLog('🚗 Bought '+car.n);addAward(car.e,car.n,'Age '+G.age);saveGame();renderStats();toast(car.e+' '+car.n+' is yours!');renderLifestyle(document.getElementById('main-content'));}
+function buyProp(id){const p=PROPS.find(x=>x.id===id);if(!p||G.cash<p.p)return;G.cash-=p.p;G.assets.props.push(id);G.assets.spend+=p.p;if(p.rent>0)G.assets.rental+=p.rent;G.happy=cl(G.happy+p.hFx);G.fame=cl(G.fame+p.fFx);G.money=cl(G.money+4);addLog('🏠 Bought '+p.n);addAward(p.e,p.n,'Age '+G.age);saveGame();renderStats();toast(p.e+' '+p.n+' purchased!');renderLifestyle(document.getElementById('main-content'));}
+function buyExp(id){const e=EXPS.find(x=>x.id===id);if(!e||G.cash<e.p)return;G.cash-=e.p;G.assets.spend+=e.p;G.happy=cl(G.happy+e.hFx);G.fame=cl(G.fame+e.fFx);G.social=cl(G.social+e.sFx);G.health=cl(G.health+e.hlFx);addLog(e.e+' '+e.n);addAward(e.e,e.n,'Age '+G.age);saveGame();renderStats();toast(e.e+' Booked — enjoy '+e.n+'!');}
+function buyNight(id){const n=NIGHTS.find(x=>x.id===id);if(!n)return;if(n.casino){const bet=Math.min(G.cash,Math.max(5000,Math.round(G.cash*0.1)));if(Math.random()<0.45){G.cash+=bet;toast('🎰 Casino win: +'+fmt(bet));G.happy=cl(G.happy+10);}else{G.cash=Math.max(0,G.cash-bet);toast('🎰 Casino loss: -'+fmt(bet));G.happy=cl(G.happy-5);}saveGame();renderStats();return;}if(n.earn){G.cash+=n.earn;}else{if(G.cash<(n.p||0))return;G.cash-=n.p||0;}G.happy=cl(G.happy+n.hFx);G.fame=cl(G.fame+n.fFx);G.social=cl(G.social+n.sFx);G.health=cl(G.health+n.hlFx);addLog(n.e+' '+n.n);saveGame();renderStats();toast(n.e+' '+n.n);}
+function buyGift(id){const g=GIFTS.find(x=>x.id===id);if(!g||G.cash<g.p)return;G.cash-=g.p;if(g.hFx)G.happy=cl(G.happy+g.hFx);const targets=g.fam?G.npcs.filter(n=>['mother','father','grandparent'].includes(n.role)):G.npcs.filter(n=>['partner','spouse','stepmom','friend'].includes(n.role));const t=targets[0]||G.npcs[0];if(t){t.love=cl(t.love+g.bFx);toast('🎁 '+g.n+' gifted to '+t.name);}addLog('🎁 Gifted '+g.n);saveGame();renderStats();}
+
+function renderPeople(c){
+  const rm={stepmom:'<span class="pill pa">👩‍👧 Stepmom</span>',mother:'<span class="pill pg">👩 Mom</span>',father:'<span class="pill pg">👨 Dad</span>',grandparent:'<span class="pill pg">👴 Grandparent</span>',friend:'<span class="pill pb">👥 Friend</span>',partner:'<span class="pill pp">❤️ Partner</span>',spouse:'<span class="pill pp">💍 Spouse</span>',ex:'<span class="pill pa">💔 Ex</span>',interest:'<span class="pill pp">💕 Interest</span>'};
+  const npcHtml=G.npcs.map((n,i)=>{const[bg,tc]=AVC[i%AVC.length];let pills=(rm[n.role]||'');if(n.secret)pills+='<span class="pill pr">🔥 Secret affair</span>';if(n.caught)pills+='<span class="pill pr">😱 Caught</span>';if(n.broken)pills+='<span class="pill pa">💔 Estranged</span>';return`<div class="person-row"><div class="avatar" style="background:${bg};color:${tc}">${n.name.slice(0,2)}</div><div class="person-info"><div class="person-name">${n.name} <span style="font-size:11px;color:var(--text3)">age ${n.age+(G.age-18)}</span></div><div style="margin:2px 0">${pills}</div><div class="person-desc">${n.desc||''}</div><div class="person-meta">❤️ Bond ${n.love} · 🤝 Trust ${n.trust}</div></div></div>`;}).join('');
+  const tmHtml=G.teammates?.map((t,i)=>{const[bg,tc]=AVC[i%AVC.length];return`<div class="person-row"><div class="avatar" style="background:${bg};color:${tc}">${t.name.slice(0,2)}</div><div class="person-info"><div class="person-name">${t.name} <span class="pill pt">${t.pos}</span>${t.partner?'<span class="pill pa">💑 Partner</span>':''}${t.partner?.secret?'<span class="pill pr">🔥 Affair</span>':''}</div><div class="person-desc">${t.desc}</div>${t.partner?`<div class="person-desc">💑 ${t.partner.name}: ${t.partner.desc}</div>`:''}<div class="person-meta">⚡ Chemistry ${t.chem} · 🤝 Loyalty ${t.loy}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="action-btn" style="margin:0;font-size:12px" onclick="tmAct('hangout',${i})">🤙 Hang out</button>${t.partner?`<button class="action-btn" style="margin:0;font-size:12px" onclick="tmAct('partner',${i})">💬 Talk to ${t.partner.name}</button>`:''}<button class="action-btn" style="margin:0;font-size:12px" onclick="tmAct('visit',${i})">🏠 Visit home</button></div></div></div>`;}).join('')||'';
+  const childHtml=G.children.map((ch,i)=>`<div class="person-row"><div class="avatar" style="background:#1a3a1a;color:#90d090">👶</div><div class="person-info"><div class="person-name">${ch.name} <span style="font-size:11px;color:var(--text3)">age ${Math.max(0,G.age-ch.bornAt)}</span>${ch.secret?'<span class="pill pr">🤫 Secret</span>':''}</div><button class="action-btn" style="margin-top:6px;font-size:12px" onclick="playAsChild(${i})">▶️ Play as ${ch.name}</button></div></div>`).join('');
+  c.innerHTML=`<div class="card"><h3>❤️ People in your life</h3>${npcHtml||'<p style="font-size:13px;color:var(--text2)">No one yet.</p>'}</div>${G.teammates?.length?`<div class="card"><h3>👥 Teammates</h3>${tmHtml}</div>`:''} ${G.children.length?`<div class="card"><h3>👨‍👩‍👦 Children</h3>${childHtml}</div>`:''}`;
+}
+
+function tmAct(type,idx){const tm=G.teammates[idx];if(!tm)return;let ev;if(type==='hangout'){ev={id:'tmh'+tm.name,title:'🤙 With '+tm.name,ctx:'👥 Teammate',text:`${tm.name} invites ${G.name} around. ${tm.desc} ${tm.partner?`${tm.partner.name} is there — ${tm.partner.desc}`:'Good conversation.'}`,choices:[{l:'🤝 Build the friendship',fx:{social:10,happy:8},log:'Hung out with '+tm.name,cb(){tm.chem=cl(tm.chem+8);tm.loy=cl(tm.loy+5);}},{l:'✌️ Keep it brief',fx:{social:3},log:'Brief hangout'},tm.partner?{l:'😏 Flirt with '+tm.partner.name,fx:{happy:8,social:-5},log:'Flirted with '+tm.partner.name,cb(){tm.loy=cl(tm.loy-10);},style:'hot'}:{l:'📋 Talk tactics',fx:{career:5},log:'Talked tactics'}]};}else if(type==='partner'&&tm.partner){ev={id:'tmp'+tm.name,title:'💬 '+tm.partner.name+' messages',ctx:'💕 Teammate\'s partner',text:`${tm.partner.name} texts privately. Not the first time. ${tm.partner.desc}`,choices:[{l:'✅ Keep it clean',fx:{social:3},log:'Stayed professional'},{l:'😏 Keep the door open',fx:{happy:6,social:-3},log:'Flirtatious dynamic',cb(){tm.loy=cl(tm.loy-5);}},{l:'🔥 Arrange to meet',fx:{happy:15,social:-12},log:'Started something with '+tm.partner.name,cb(){tm.partner.secret=true;tm.loy=cl(tm.loy-20);},style:'hot'}]};}else{ev={id:'tmv'+tm.name,title:'🏠 At '+tm.name+'\'s place',ctx:'👥 Teammate',text:`Proper house. ${tm.partner?`${tm.partner.name} answers the door. ${tm.partner.desc} ${tm.name} is out back.`:'Good food and people.'}`,choices:[{l:'😊 Respect the space',fx:{social:8,happy:6},log:'Good evening at '+tm.name+'\'s',cb(){tm.chem=cl(tm.chem+10);}},tm.partner?{l:'🔥 Find a moment alone with '+tm.partner.name,fx:{happy:14,social:-10},log:'Found a moment alone with '+tm.partner.name,cb(){tm.partner.secret=true;tm.loy=cl(tm.loy-15);},style:'hot'}:{l:'📚 Learn from the veteran',fx:{career:6},log:'Learned from '+tm.name}]};}
+if(ev){G.usedEvs.push(ev.id);showEvDirect(ev);}}
+
+function renderMore(c){
+  c.innerHTML=`<div class="card"><h3>⚙️ More options</h3><div style="display:flex;flex-direction:column;gap:8px">
+<button class="choice-btn" onclick="swTab('sport',document.querySelector('[data-tab=sport]'))">🏆 Sport & career details</button>
+<button class="choice-btn" onclick="showFullLog()">📖 Full life log</button>
+<button class="choice-btn" onclick="showAllAwards()">🏅 All awards</button>
+<button class="choice-btn" onclick="resetGame()" style="border-color:var(--red)">🔄 Start over</button>
+</div></div>
+<div class="card"><div style="font-size:12px;color:var(--text2);line-height:1.6">Gen ${G.gen} · ${G.natL} · Age ${G.age} · ${fmt(G.cash)} net worth · ${G.cs.trophies} trophies · ${G.awards.length} awards · ${G.cities.length} cities visited</div></div>`;
+}
+function showFullLog(){const c=document.getElementById('main-content');c.innerHTML=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><h3>📖 Full life log</h3><button class="action-btn" style="margin:0" onclick="swTab('more',document.querySelector('[data-tab=more]'))">← Back</button></div>${G.log.slice().reverse().map(e=>`<div class="log-entry"><span class="log-age">age ${e.age}</span>${e.text}</div>`).join('')||'<p style="font-size:13px;color:var(--text2)">Nothing yet.</p>'}</div>`;}
+function showAllAwards(){const c=document.getElementById('main-content');c.innerHTML=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><h3>🏅 All awards</h3><button class="action-btn" style="margin:0" onclick="swTab('more',document.querySelector('[data-tab=more]'))">← Back</button></div>${G.awards.slice().reverse().map(a=>`<div class="award-row"><div class="award-icon">${a.icon}</div><div><div style="font-size:13px;font-weight:500;color:var(--text)">${a.title}</div><div style="font-size:11px;color:var(--text2)">Age ${a.age} · ${a.desc}</div></div></div>`).join('')||'<p style="font-size:13px;color:var(--text2)">Nothing yet.</p>'}</div>`;}
+
+function addLog(t){G.log.push({age:G.age,text:t});}
+function addAward(icon,title,desc){G.awards.push({icon,title,desc,age:G.age});}
+function applyFx(fx){for(const[k,v]of Object.entries(fx)){if(k==='cash')G.cash=Math.max(0,G.cash+v);else if(G[k]!==undefined)G[k]=cl(G[k]+v);}}
+function getPartner(){return G.npcs.find(n=>n.role==='partner'||n.role==='spouse');}
+function getSM(){return G.npcs.find(n=>n.role==='stepmom');}
+
+function earlyRetire(){showEvDirect({title:'🎖 Hanging up the boots early',ctx:'Career',text:`${G.name} is ${G.age}. Still able to play. But the mind is asking questions the body can\'t answer anymore.`,choices:[{l:'🎖 Retire now — on my own terms',fx:{happy:20,health:12},log:'🎖 Chose early retirement at age '+G.age,cb(G){G.retired=true;addAward('🎖','Early retirement','Chose to stop at age '+G.age);}},{l:'💪 One more big contract first',fx:{career:5,cash:500000},log:'Decided to play on — one more contract'},{l:'⏳ Stay until the body says stop',fx:{health:-8,career:10},log:'Committed to playing until the body gives out'}]});}
+function doInjury(){const inj=pick(INJURIES);G.injury=inj;G.rehab=0;G.health=cl(G.health-inj.hd);G.career=cl(G.career-inj.cd);showEvDirect({title:'🤕 '+inj.n,ctx:'⚠️ Injury',text:`${G.name} goes down. ${inj.d} This is the kind of moment that tests what you\'re made of.`,choices:[{l:'📋 Follow the rehab exactly',fx:{health:8,career:5},log:'Followed full rehab protocol',cb(G){G.rehab=Math.round(inj.wks*0.5);}},{l:'💪 Push hard — come back faster',fx:{health:-5,career:8},log:'Pushed rehab hard',cb(G){G.rehab=Math.round(inj.wks*0.75);}},{l:'🕐 Take it slowly',fx:{health:12,career:-5},log:'Careful rehab approach',cb(G){G.rehab=Math.round(inj.wks*0.25);}}]});}
+
+function launchMatch(md){MS={home:md.home,away:md.away,ctx:md.ctx,hs:0,as:0,min:0,maxMin:md.minutes||6,evts:[],imp:md.importance||1,perf:0,onDone:md.onComplete};document.getElementById('m-title').textContent='🏟 Live match';document.getElementById('m-ctx').textContent=MS.ctx;showScreen('sc-match');renderMatch();}
+function renderMatch(){const m=MS;document.getElementById('m-home').textContent=m.home;document.getElementById('m-away').textContent=m.away;document.getElementById('m-score').textContent=m.hs+' — '+m.as;document.getElementById('m-min').textContent=Math.round(m.min*(90/m.maxMin));const sit=getSit(m);document.getElementById('m-sit').textContent=sit.title;document.getElementById('m-desc').textContent=sit.desc;document.getElementById('m-actions').innerHTML=sit.actions.map((a,i)=>`<button class="match-btn${a.key?' key':''}" onclick="mAct(${i})">${a.label}</button>`).join('');document.getElementById('m-com').textContent=m.evts.slice(-1)[0]||'⚽ Match underway...';}
+function getSit(m){const prog=m.min/m.maxMin,lead=m.hs-m.as,s=G.sport;if(s==='soccer'){if(prog<0.3)return{title:'🏃 Early game',desc:`${G.name} receives the ball in midfield.`,actions:[{label:'💨 Drive forward',key:true},{label:'⚡ Short pass'},{label:'🎯 Long ball'},{label:'↔️ Switch wide'}]};if(prog<0.65&&lead<=0)return{title:'⚽ Need a goal!',desc:`Down or level. ${G.name} picks up ball 25 yards out.`,actions:[{label:'💥 Shoot!',key:true},{label:'🤝 One-two'},{label:'🏃 Dribble'},{label:'🔄 Keep possession'}]};if(prog>=0.8&&lead>0)return{title:'🛡 Protect the lead',desc:'Ahead with time running out.',actions:[{label:'📐 Kill the clock',key:true},{label:'🎭 Win a foul'},{label:'⚡ Press more'},{label:'🏃 Counter'}]};return{title:'⚡ Key moment',desc:`${G.name} is in space.`,actions:[{label:'💥 Shoot',key:true},{label:'🎯 Assist striker'},{label:'🔄 Hold it'},{label:'🏁 Win corner'}]};}if(s==='basketball'){if(prog<0.3)return{title:'🏀 First quarter',desc:`${G.name} at the top of the key.`,actions:[{label:'🚀 Drive',key:true},{label:'🎯 Pull-up J'},{label:'🤝 Dish it'},{label:'🔄 Reset'}]};if(prog>=0.7&&Math.abs(lead)<=3)return{title:'⚡ Clutch time!',desc:`Close game. It\'s coming to ${G.name}.`,actions:[{label:'💥 Step-back 3',key:true},{label:'🎭 Draw foul'},{label:'🤝 Open man'},{label:'💪 Post up'}]};return{title:'🏀 Half court',desc:`${G.name} brings it up.`,actions:[{label:'🎯 Pull-up shot',key:true},{label:'📋 Set offense'},{label:'🚀 Attack paint'},{label:'↔️ Kick out'}]};}if(prog<0.4)return{title:'🏈 First half',desc:`${G.name} reads the defense.`,actions:[{label:'🧠 Audible',key:true},{label:'🏃 Run it'},{label:'⚡ Quick release'},{label:'🎯 Go deep'}]};return{title:'🏈 Third down',desc:'Need the first.',actions:[{label:'↔️ Crossing route',key:true},{label:'🎭 Draw offsides'},{label:'💪 QB sneak'},{label:'🦵 Punt'}]};}
+function mAct(idx){const m=MS;const sit=getSit(m);m.min++;const key=sit.actions[idx].key;const skill=(G.career/100)*0.3;const succ=Math.random()<(key?0.55+skill:0.4+skill);let com='';if(G.sport==='soccer'){if(succ&&key){m.hs++;m.perf+=2;G.cs.goals++;G.season.goals++;com=`⚽ GOAL! ${G.name} scores! ${m.hs}—${m.as}`;}else if(succ){m.perf++;com='✅ Good play.';}else if(key){com='😬 Shot goes wide.';}else{if(Math.random()<0.3){m.as++;com=`😱 Counter! ${m.hs}—${m.as}`;}else com='❌ Possession lost.';}}else if(G.sport==='basketball'){if(succ&&key){const pts=Math.random()<0.4?3:2;m.hs+=pts;m.perf+=pts;G.season.pts+=pts;com=`🏀 +${pts}! ${m.hs}—${m.as}`;}else if(succ){m.hs+=2;com='✅ Basket!';}else{if(Math.random()<0.35){m.as+=2;com='😱 Turnover!';}else com='🚫 Blocked.';}}else{if(succ&&key){if(Math.random()<0.35){m.hs+=7;m.perf+=3;G.season.tds++;com=`🏈 TOUCHDOWN! ${m.hs}—${m.as}`;}else{m.hs+=3;m.perf++;com='✅ Field goal!';}}else{if(Math.random()<0.3){m.as+=7;com='😱 Pick six!';}else com='❌ Incomplete.';}}m.evts.push(com);document.getElementById('m-com').textContent=com;document.getElementById('m-score').textContent=m.hs+' — '+m.as;document.getElementById('m-min').textContent=Math.round(m.min*(90/m.maxMin));if(m.min>=m.maxMin){endMatch();return;}const sit2=getSit(m);document.getElementById('m-sit').textContent=sit2.title;document.getElementById('m-desc').textContent=sit2.desc;document.getElementById('m-actions').innerHTML=sit2.actions.map((a,i)=>`<button class="match-btn${a.key?' key':''}" onclick="mAct(${i})">${a.label}</button>`).join('');}
+function endMatch(){const m=MS;const won=m.hs>m.as;showScreen('sc-game');if(won){G.season.wins++;G.career=cl(G.career+3);G.fame=cl(G.fame+m.imp*3);}if(m.perf>3){addAward('⭐','Outstanding performance','Key game — age '+G.age);}if(m.onDone)m.onDone(won,m.perf);const res=won?'Win':m.hs===m.as?'Draw':'Loss';const emoji=won?'🎉':m.hs===m.as?'🤝':'😔';addLog(`${emoji} ${m.home} ${m.hs}—${m.as} ${m.away} (${res})`);G.pendingEv={title:emoji+' Match result',ctx:'🏆 Sport',text:`${m.home} ${m.hs} — ${m.as} ${m.away} (${res}). Performance: ${m.perf>4?'⭐ Outstanding':m.perf>2?'✅ Good':'😐 Decent'}.`,choices:[{l:'Continue ▶️',fx:{happy:won?8:-5,health:-3},log:res}]};swTab('events',document.querySelector('[data-tab=events]'));renderStats();}
+
+function advanceTime(){
+  G.sIdx=(G.sIdx+1)%4;
+  if(G.sIdx===0){
+    G.age++;G.year++;
+    if(G.sport!=='none'&&!G.retired&&G.sLvl>0){const wages=[0,12000,80000,500000,2000000,8000000,20000000];G.cash+=Math.round((wages[Math.min(G.sLvl,6)]||0)/4);G.career=cl(G.career+1);}
+    if(G.assets.rental>0)G.cash+=G.assets.rental;
+    const carCost=G.assets.car?CARS.find(c=>c.id===G.assets.car)?.mo||0:0;
+    const living=G.curCity!==G.homeCity?3200:1800;
+    G.cash=Math.max(0,G.cash-living-carCost);
+    if(G.age>40)G.health=cl(G.health-1);
+    G.season.wins+=(Math.random()<(0.3+G.career*0.004)?1:0);
+    G.season.losses+=(Math.random()<0.5?1:0);
+    if(G.injury){G.rehab=Math.min(G.injury.wks,G.rehab+ri(4,8));if(G.rehab>=G.injury.wks){addLog('✅ Recovered from '+G.injury.n);G.injury=null;G.rehab=0;}}
+    if(G.sLvl>=2&&!G.retired&&Math.random()<0.04)doInjury();
+    if(G.sLvl>=3&&!G.retired&&Math.random()<0.15)G.offers=genOffers();
+    saveGame();
+  }
+}
+
+const EVENTS=[
+{id:'sc_youth',a:[14,17],sp:'soccer',ml:0,xl:0,title:'👀 Spotted at youth level',ctx:'⚽ Youth',text(G){return`A scout watches ${G.name} in a dusty local league. Smaller, faster, smarter, hungrier. After the match he approaches the family.`;},choices:[{l:'💪 Train twice a day — earn the spot',fx:{health:-5,career:18,happy:10},log:'⚽ Earned academy spot',cb(G){G.sLvl=1;G.club='🏟 National youth academy';addAward('⚽','Academy signing','Spotted young — age '+G.age);}},{l:'👨‍👩‍👦 Let the family decide',fx:{career:10},log:'Joined academy after family talk',cb(G){G.sLvl=1;G.club='🏟 National youth academy';}},{l:'🏡 Stay local for now',fx:{career:-5,happy:5},log:'Stayed local — missed academy'}]},
+{id:'sc_pro',a:[17,21],sp:'soccer',ml:1,xl:1,title:'✍️ First pro contract',ctx:'⚽ First pro',text(G){return`A pro club at home puts a contract on the table. ${G.natL==='Egyptian'?'Al Ahly 🇪🇬 — the biggest club in Africa.':G.natL==='Brazilian'?'Flamengo 🇧🇷 — millions of fans.':'A top domestic club.'} First real wages.`;},choices:[{l:'✅ Sign and prove yourself here',fx:{career:20,cash:45000,happy:15,fame:8},log:'✍️ Signed first pro contract',cb(G){G.sLvl=2;G.club=G.natL==='Egyptian'?'⚽ Al Ahly':G.natL==='Brazilian'?'⚽ Flamengo':G.natL==='Nigerian'?'⚽ Enyimba FC':'⚽ Home club';G.cash+=45000;addAward('⚽','First pro contract','Domestic debut — age '+G.age);}},{l:'✈️ Hold out for Europe',fx:{career:8,happy:-5},log:'Held out for a European offer'},{l:'📝 Sign with release clause',fx:{career:16,cash:38000},log:'Signed with release clause',cb(G){G.sLvl=2;G.cash+=38000;}}]},
+{id:'sc_euro',a:[19,25],sp:'soccer',ml:2,xl:2,title:'🇪🇺 Europe — small club',ctx:'⚽ Europe',text(){return`Switzerland, Portugal, Austria. A small European club. Cold winters. Small stadium. Exactly how Salah went to Basel 🇨🇭. Every great journey starts here.`;},choices:[{l:'💪 Take it — embrace the grind',fx:{career:25,cash:200000,happy:8,fame:12},log:'✈️ First European move',cb(G){G.sLvl=3;G.curCity='Basel';G.club='⚽ FC Basel';G.cash+=200000;if(!G.cities.includes('Basel'))G.cities.push('Basel');addAward('✈️','First European move','Left home for Europe — age '+G.age);}},{l:'📝 Short contract — keep options open',fx:{career:18,cash:150000},log:'Short-term European deal',cb(G){G.sLvl=3;G.curCity='Basel';G.club='⚽ European club';G.cash+=150000;}},{l:'🏠 One more season at home',fx:{career:5,happy:10},log:'Stayed home one more season'}]},
+{id:'sc_bench',a:[20,26],sp:'soccer',ml:3,xl:3,title:'😤 Fighting for minutes',ctx:'⚽ Adversity',text(){return`The manager plays veterans. Week after week. Bench. Training. Repeat. This moment defines careers — how do you respond when the path is blocked?`;},choices:[{l:'💪 Train harder — demand selection',fx:{career:20,health:-8,happy:-5},log:'Fought for minutes and earned them',cb(G){addAward('💪','Earned the shirt','Adversity overcome — age '+G.age);}},{l:'📚 Study the game',fx:{career:14,happy:5},log:'Developed intelligence on the bench'},{l:'✈️ Request a move',fx:{career:10},log:'Pushed for a loan move'}]},
+{id:'sc_break',a:[22,29],sp:'soccer',ml:3,xl:4,title:'🌟 Breakthrough season',ctx:'⚽ World notices',text(){return`This is the season everything clicks. ⚽ Goals. Assists. Social media talking. European giants making calls.`;},choices:[{l:'🔥 Every game like a final',fx:{career:28,fame:25,happy:20},log:'🌟 Breakthrough season',cb(G){if(G.sLvl<4){G.sLvl=4;G.club='⭐ Breakthrough club';}addAward('⭐','Breakthrough season','World noticed — age '+G.age);}},{l:'😌 Stay humble — let the football talk',fx:{career:22,fame:15,happy:18},log:'Breakthrough season — stayed grounded'}]},
+{id:'sc_elite',a:[24,32],sp:'soccer',ml:4,xl:4,title:'🏆 Elite club offer',ctx:'⚽ The big stage',text(){return`Barcelona. Real Madrid. Liverpool. Bayern 🏆. The biggest clubs in the world are calling.`;},choices:[{l:'✅ Sign with the biggest offer',fx:{career:32,fame:35,cash:12000000},log:'🏆 Joined elite club',cb(G){G.sLvl=5;G.club='⚽ Liverpool FC';G.curCity='Liverpool';if(!G.cities.includes('Liverpool'))G.cities.push('Liverpool');G.cash+=12000000;addAward('⭐','Elite club signing','Joined the very best — age '+G.age);}},{l:'🏆 Choose best sporting project',fx:{career:28,fame:28,cash:8000000},log:'Chose best project',cb(G){G.sLvl=5;G.club='⚽ Elite club';G.cash+=8000000;}},{l:'❤️ Stay loyal',fx:{career:18,fame:15,happy:20,social:12},log:'Loyalty over money',cb(G){addAward('❤️','Club loyalty','Turned down biggest clubs');}}]},
+{id:'sc_barca',a:[25,34],sp:'soccer',ml:5,xl:5,title:'🇪🇸 Barcelona bid accepted',ctx:'⚽ Transfer window',text(G){return`${G.club.replace(/[⚽⭐]\s*/,'')} accepted a Barcelona bid 🔴🔵. Liverpool have been paid. Anfield or Camp Nou. England or Spain.`;},choices:[{l:'✅ Accept — move to Barcelona',fx:{career:28,fame:28,cash:8000000},log:'✈️ Transferred to FC Barcelona',cb(G){G.curCity='Barcelona';G.club='⚽ FC Barcelona';G.cash+=8000000;if(!G.cities.includes('Barcelona'))G.cities.push('Barcelona');addAward('⭐','Barcelona transfer','Anfield to Camp Nou — age '+G.age);}},{l:'❤️ Reject — stay at Liverpool',fx:{career:10,fame:12,happy:15,social:10},log:'Turned down Barcelona — Anfield loyalty',cb(G){addAward('❤️','Anfield loyalty','Said no to Barcelona');}},{l:'😤 Force the move',fx:{career:25,fame:20,cash:8000000,social:-10},log:'Forced the move to Barcelona',cb(G){G.curCity='Barcelona';G.club='⚽ FC Barcelona';G.cash+=8000000;}}]},
+{id:'sc_saudi',a:[30,42],sp:'soccer',ml:4,title:'🇸🇦 Saudi Pro League',ctx:'⚽ Late career',text(){return`Al Nassr or Al Hilal 🇸🇦. The contract is obscene. Ronaldo took it. Benzema took it. Now they want you.`;},choices:[{l:'💰 Take the money',fx:{career:5,fame:15,cash:25000000},log:'💰 Signed Saudi Pro League deal',cb(G){G.curCity='Riyadh';G.club='⚽ Al Nassr';G.cash+=25000000;if(!G.cities.includes('Riyadh'))G.cities.push('Riyadh');addAward('💰','Saudi contract','Biggest contract of career');}},{l:'🏆 Stay in Europe',fx:{career:12,fame:8,happy:15},log:'Chose Europe over Saudi money'},{l:'🌅 Inter Miami — MLS',fx:{career:5,fame:12,cash:10000000,happy:18},log:'Moved to Inter Miami',cb(G){G.curCity='Miami';G.club='⚽ Inter Miami';G.cash+=10000000;if(!G.cities.includes('Miami'))G.cities.push('Miami');}}]},
+{id:'sc_cl',a:[26,36],sp:'soccer',ml:5,title:'🏆 Champions League Final',ctx:'⚽ Biggest night',text(G){return`${G.club.replace(/[⚽⭐]\s*/,'')}. Champions League Final 🏆. Billions watching. This is what every difficult season was preparation for.`;},choices:[{l:'▶️ Play it out',fx:{},log:'Played Champions League Final',cb(G){launchMatch({home:G.club.replace(/[⚽⭐]\s*/,'')||'Your Club',away:'Rival FC',ctx:'🏆 Champions League Final',minutes:8,importance:5,onComplete:(won,perf)=>{if(won){G.cs.trophies++;G.cash+=3000000;addAward('🏆','Champions League winner','European champion — age '+G.age);G.fame=cl(G.fame+25);}if(perf>4)addAward('🏅','CL Final MVP','Player of the match — age '+G.age);}});}},{l:'🏆 Win it — legendary (skip)',fx:{career:35,fame:42,cash:3000000,happy:30},log:'🏆 Won Champions League Final',cb(G){G.cs.trophies++;addAward('🏆','Champions League winner','European champion — age '+G.age);G.cash+=3000000;}},{l:'😔 Lose — heartbreaking',fx:{career:8,fame:15,happy:-20},log:'😔 Lost the CL Final'}]},
+{id:'sc_wc',a:[22,36],sp:'soccer',ml:3,title:'🌍 World Cup',ctx:'⚽ International',text(G){return`The whole nation behind ${G.name} 🙌. The biggest stage in world sport.`;},choices:[{l:'▶️ Play the tournament out',fx:{},log:'🌍 Playing in the World Cup',cb(G){launchMatch({home:G.natL,away:'World XI',ctx:'🌍 World Cup Knockout',minutes:7,importance:5,onComplete:(won,perf)=>{if(won){addAward('🌍','World Cup winner','International champion — age '+G.age);G.fame=cl(G.fame+35);G.cash+=2000000;}if(perf>4)addAward('🌍','Golden Boot','Top scorer of the World Cup');}});}},{l:'🌍 Win Golden Boot + trophy (skip)',fx:{career:40,fame:50,cash:2000000,happy:35},log:'🌍 Won World Cup + Golden Boot',cb(G){addAward('🌍','World Cup + Golden Boot','The pinnacle — age '+G.age);G.cash+=2000000;}}]},
+{id:'bk_street',a:[14,17],sp:'basketball',ml:0,xl:0,title:'🏀 The court',ctx:'🏀 Street ball',text(){return`Cracked concrete, bent rim. Out there every day. The older guys test you every weekend. This is where it starts.`;},choices:[{l:'💪 Every day — no days off',fx:{health:5,career:16,happy:12},log:'🏀 Dominated the street courts'},{l:'🏆 Local tournaments — get seen',fx:{career:12,fame:6,happy:10},log:'Entered local tournaments'},{l:'📚 Ball and grades',fx:{career:8,happy:8,social:6},log:'Balanced basketball with school'}]},
+{id:'bk_hs',a:[15,18],sp:'basketball',ml:0,xl:1,title:'🏫 High school varsity',ctx:'🏀 HS',text(){return`Varsity as a sophomore 😤. Scouts in the bleachers by junior year.`;},choices:[{l:'⭐ Carry the team',fx:{career:18,fame:14,happy:12},log:'🏀 HS varsity star',cb(G){G.sLvl=1;addAward('🏀','HS varsity star','Dominated HS basketball');}},{l:'🤝 Elevate teammates',fx:{career:14,social:10,fame:8},log:'HS team playmaker'},{l:'📚 Grades first',fx:{career:10,happy:6},log:'Balanced ball and academics'}]},
+{id:'bk_college',a:[17,21],sp:'basketball',ml:1,xl:1,title:'🎓 College recruitment',ctx:'🏀 Recruitment',text(){return`Three programs want you. A powerhouse, a mid-major, a local school.`;},choices:[{l:'🏆 Powerhouse program',fx:{career:22,fame:18},log:'Signed with D1 powerhouse',cb(G){G.sLvl=2;G.club='🏀 D1 powerhouse';addAward('🏀','D1 scholarship','Full ride to a powerhouse');}},{l:'⭐ Mid-major — start day one',fx:{career:16,fame:10,happy:10},log:'Chose mid-major',cb(G){G.sLvl=2;G.club='🏀 D1 mid-major';}},{l:'✈️ Overseas — skip college',fx:{career:12,cash:180000},log:'Went pro overseas',cb(G){G.sLvl=2;G.cash+=180000;}}]},
+{id:'bk_draft',a:[19,24],sp:'basketball',ml:2,xl:2,title:'🏀 NBA draft night',ctx:'🏀 The draft',text(){return`Green room. Draft night. The commissioner steps to the podium 😤.`;},choices:[{l:'🎉 Top 5 lottery pick',fx:{career:30,fame:30,cash:15000000},log:'🏀 NBA lottery pick',cb(G){G.sLvl=3;G.club='🏀 NBA';G.curCity='USA';G.cash+=15000000;addAward('🏀','NBA lottery pick','Top 5 selection');}},{l:'✅ First round — solid landing',fx:{career:22,fame:20,cash:6000000},log:'NBA first round pick',cb(G){G.sLvl=3;G.club='🏀 NBA roster';G.curCity='USA';G.cash+=6000000;addAward('🏀','NBA first round pick','Draft day — age '+G.age);}},{l:'😤 Second round — chip on shoulder',fx:{career:14,fame:8,cash:1000000,happy:-10},log:'NBA second round — chip on shoulder',cb(G){G.sLvl=3;G.club='🏀 NBA';G.cash+=1000000;}}]},
+{id:'bk_finals',a:[24,38],sp:'basketball',ml:4,title:'🏆 NBA Finals — Game 7',ctx:'🏀 NBA Finals',text(){return`Game 7. Everything since those cracked courts comes down to 48 minutes. The whole arena is deafening 🏀.`;},choices:[{l:'▶️ Play it out',fx:{},log:'Played NBA Finals G7',cb(G){launchMatch({home:G.club.replace(/[🏀⭐]\s*/,'')||'Your Team',away:'Opponents',ctx:'🏆 NBA Finals — Game 7',minutes:8,importance:5,onComplete:(won,perf)=>{if(won){G.cs.trophies++;G.cash+=5000000;addAward('🏆','NBA Champion','Title winner — age '+G.age);G.fame=cl(G.fame+30);}if(perf>5)addAward('🏅','Finals MVP','MVP of the NBA Finals — age '+G.age);}});}},{l:'🏆 Win it — Finals MVP (skip)',fx:{career:38,fame:45,cash:5000000,happy:35},log:'🏆 Won NBA Finals — Finals MVP',cb(G){G.cs.trophies++;addAward('🏆','NBA Champion + Finals MVP','The defining moment — age '+G.age);G.cash+=5000000;}}]},
+{id:'fb_hs',a:[15,18],sp:'football',ml:0,xl:1,title:'🏈 Friday night lights',ctx:'🏈 HS',text(){return`Junior year 🌟. Most talked-about player in the state. The whole town shows up every Friday.`;},choices:[{l:'🏆 Lead to state',fx:{career:20,fame:16,happy:14},log:'🏈 Led HS team to state championship',cb(G){G.sLvl=1;addAward('🏈','State champion','Friday night glory');}},{l:'⭐ Individual brilliance',fx:{career:16,fame:12,happy:10},log:'HS standout'},{l:'📚 Grades alongside football',fx:{career:12,happy:8},log:'Balanced HS football and academics'}]},
+{id:'fb_college',a:[17,21],sp:'football',ml:1,xl:1,title:'🏈 Power Five recruitment',ctx:'🏈 College',text(){return`Alabama. Georgia. Ohio State 🏆. The blue bloods want you.`;},choices:[{l:'🏆 Alabama — biggest stage',fx:{career:25,fame:22},log:'Signed with Alabama',cb(G){G.sLvl=2;G.club='🏈 Alabama';addAward('🏈','Power Five scholarship','Full ride to a blue blood');}},{l:'⭐ Smaller school — stand out',fx:{career:16,fame:12,happy:10},log:'Chose smaller school',cb(G){G.sLvl=2;G.club='🏈 Power Five program';}}]},
+{id:'fb_combine',a:[21,25],sp:'football',ml:2,xl:2,title:'🏈 NFL Combine',ctx:'🏈 Indianapolis',text(){return`Every GM is here. Every number matters. One bad day drops you ten spots 😰.`;},choices:[{l:'💥 Record-breaking — top 10',fx:{career:32,fame:28,cash:18000000},log:'🏈 Record NFL Combine',cb(G){G.sLvl=3;G.club='🏈 NFL (top 10)';G.curCity='USA';G.cash+=18000000;addAward('🏈','Top 10 NFL pick','Elite combine numbers');}},{l:'✅ Solid — first round',fx:{career:20,fame:16,cash:7000000},log:'NFL first round pick',cb(G){G.sLvl=3;G.club='🏈 NFL roster';G.curCity='USA';G.cash+=7000000;addAward('🏈','NFL first round pick','Drafted in the first round');}},{l:'😰 Injury during drills',fx:{career:-10,health:-20,happy:-18},log:'😰 Injured at the Combine'}]},
+{id:'fb_sb',a:[23,38],sp:'football',ml:4,title:'🏆 Super Bowl Sunday',ctx:'🏈 Super Bowl',text(){return`Super Bowl 🏈. The halftime show is background noise. The game is everything. You\'re in the starting lineup.`;},choices:[{l:'▶️ Play it out',fx:{},log:'Played Super Bowl',cb(G){launchMatch({home:G.club.replace(/[🏈⭐]\s*/,'')||'Your Team',away:'Opponents',ctx:'🏆 Super Bowl',minutes:8,importance:5,onComplete:(won,perf)=>{if(won){G.cs.trophies++;G.cash+=8000000;addAward('🏆','Super Bowl Champion','Lombardi Trophy — age '+G.age);G.fame=cl(G.fame+35);}if(perf>5)addAward('🏅','Super Bowl MVP','Most valuable player — age '+G.age);}});}},{l:'🏆 Win it — Super Bowl MVP (skip)',fx:{career:40,fame:48,cash:8000000,happy:35},log:'🏆 Won Super Bowl — MVP',cb(G){G.cs.trophies++;addAward('🏆','Super Bowl MVP','Greatest game of the career — age '+G.age);G.cash+=8000000;}}]},
+{id:'retire_ev',a:[30,42],ml:3,title:'🎖 Time to hang up the boots',ctx:'Career',text(G){return`The body has been honest for two seasons. Recovery takes longer. ${G.name} knows. Everyone knows 😔.`;},choices:[{l:'🎖 Retire on own terms',fx:{happy:22,health:16},log:'🎖 Retired from sport',cb(G){G.retired=true;addAward('🎖','Retirement','Retired at age '+G.age);}},{l:'💪 One more season',fx:{health:-22,cash:1200000},log:'Pushed for one final season',cb(G){G.cash+=1200000;}},{l:'📋 Transition to coaching',fx:{career:18,fame:8,happy:14},log:'📋 Became head coach',cb(G){G.retired=true;G.coach=true;G.club='📋 Head Coach';addAward('📋','Head coach','Moved into management');}}]},
+{id:'sm1',a:[18,30],smO:true,title:'🔥 Tension at home',ctx:'🏠 Home life',text(G){const sm=getSM();return`Late after training. ${sm?sm.name:'She\'s'} alone in the kitchen. ${sm?sm.desc:''} The house is quiet. She holds eye contact a beat too long 😏.`;},choices:[{l:'🔥 Cross the line tonight',fx:{happy:15,social:-5},log:'🔥 Started secret affair with stepmom',cb(G){const sm=getSM();if(sm){sm.secret=true;sm.love=cl(sm.love+30);}},style:'hot'},{l:'😐 Acknowledge it — don\'t act',fx:{happy:5},log:'Felt the tension and held back'},{l:'🚶 Keep distance from now on',fx:{social:5},log:'Distanced from the situation'}]},
+{id:'sm2',a:[18,36],smS:true,title:'📱 The secret deepens',ctx:'🔥 The affair',text(G){const sm=getSM();const dad=G.npcs.find(n=>n.role==='father');return`${sm?sm.name:'She'} texts when ${dad?dad.name:'Dad'} is away. Something real and dangerous.`;},choices:[{l:'🔥 Keep going',fx:{happy:14,social:-10},log:'🔥 Deepened the affair',cb(G){const sm=getSM();if(sm)sm.love=cl(sm.love+18);},style:'hot'},{l:'✋ End it',fx:{happy:-12,social:5},log:'Ended the affair',cb(G){const sm=getSM();if(sm){sm.secret=false;sm.broken=true;}}}]},
+{id:'sm_caught',a:[18,40],smS:true,title:'😱 Someone sees something',ctx:'💥 The fallout',text(G){const dad=G.npcs.find(n=>n.role==='father');const sm=getSM();return`${dad?dad.name:'Dad'} comes home early 😱. A text. A door not fully closed. ${sm?sm.name:'She'} freezes.`;},choices:[{l:'😤 Deny everything',fx:{social:-18,happy:-20},log:'😱 Got caught — denied',cb(G){const sm=getSM();if(sm)sm.caught=true;const d=G.npcs.find(n=>n.role==='father');if(d){d.love=cl(d.love-40);d.trust=cl(d.trust-55);}},style:'risk'},{l:'🙏 She covers for you — barely',fx:{social:-6,happy:-14},log:'Barely escaped',cb(G){const sm=getSM();if(sm)sm.love=cl(sm.love+12);},style:'hot'},{l:'😔 Come clean',fx:{social:-45,happy:-32},log:'Confessed everything to father',cb(G){const sm=getSM();if(sm){sm.secret=false;sm.caught=true;sm.broken=true;}const d=G.npcs.find(n=>n.role==='father');if(d){d.love=cl(d.love-70);d.trust=0;}},style:'risk'}]},
+{id:'sm_after',a:[18,45],smC:true,title:'💭 After the fallout',ctx:'❓ What now',text(G){const sm=getSM();return`Weeks later. ${sm?sm.name:'She'} still texts sometimes 📱. Your dad\'s marriage is probably over. Something is still alive between you and ${sm?sm.name:'her'} 🔥.`;},choices:[{l:'🔥 Keep seeing her',fx:{happy:12,social:-15},log:'🔥 Continued the affair post-fallout',cb(G){const sm=getSM();if(sm)sm.secret=true;},style:'hot'},{l:'💕 Tell her you want something real',fx:{happy:10,social:-20},log:'Pushed toward something real',cb(G){const sm=getSM();if(sm){sm.role='interest';sm.love=cl(sm.love+30);}},style:'hot'},{l:'💔 End it for good',fx:{happy:-12,social:8},log:'Ended the affair permanently'}]},
+{id:'sm_marry',a:[20,50],smI:true,title:'💍 Against all odds',ctx:'❤️ A real question',text(G){const sm=G.npcs.find(n=>n.role==='interest')||getSM();return`${G.name}\'s father is out of the picture. ${sm?sm.name:'She'} looks across the table: "So what are we doing?" 💭`;},choices:[{l:'💍 Propose — make it official',fx:{happy:25,social:-15,cash:-12000},log:'💍 Proposed to stepmom',cb(G){const sm=G.npcs.find(n=>n.role==='interest')||getSM();if(sm){sm.role='spouse';sm.love=cl(sm.love+35);sm.broken=false;}G.partner=sm?sm.id:null;addAward('💍','Married stepmom','Against all odds — age '+G.age);G.cash-=12000;},style:'hot'},{l:'💕 Keep it real — no label',fx:{happy:12,social:-5},log:'Kept the relationship without a label'},{l:'💔 Walk away',fx:{happy:-15,social:8},log:'Walked away'}]},
+{id:'rel',a:[18,32],nP:true,title:'❤️ Someone new',ctx:'💕 Social',text(G){const nm=G.gender==='male'?pick(['Sofia','Maya','Priya','Zoe','Jasmine','Chloe','Naomi']):pick(['Marcus','Tyler','Andre','Cole','Jalen']);const desc=G.gender==='male'?pick(['5\'6", dark eyes, curvy and confident 😍.','5\'8", natural hair, lean and athletic 🔥.']):pick(['6\'1", quiet confidence 😏.','5\'11", easy smile, deep voice 😊.']);return`${nm} has been in ${G.name}\'s orbit. ${desc} The interest is clearly mutual 💕.`;},choices:[{l:'❤️ Ask them out',fx:{social:12,happy:10},log:'❤️ Started a new relationship',cb(G){const nm=G.gender==='male'?pick(['Sofia','Maya','Priya','Zoe','Jasmine','Chloe','Naomi']):pick(['Marcus','Tyler','Andre','Cole','Jalen']);const desc=G.gender==='male'?pick(['5\'6", dark eyes, curvy and confident 😍.','5\'8", natural hair, lean athletic build 🔥.']):pick(['6\'1", quiet confidence 😏.','5\'11", easy smile 😊.']);const npc={name:nm,age:G.age+ri(-4,4),gender:G.gender==='male'?'female':'male',role:'partner',desc,love:60,trust:65,secret:false,caught:false,broken:false,id:Math.random().toString(36).slice(2)};G.npcs.push(npc);G.partner=npc.id;addAward('❤️','New relationship','Started dating '+nm+' — age '+G.age);}},{l:'😏 Keep it casual',fx:{social:6,happy:6},log:'Kept things casual'},{l:'😐 Let it pass',fx:{happy:-3},log:'Let the moment pass'}]},
+{id:'baby',a:[21,44],hP:true,title:'👶 Unexpected news',ctx:'💕 Relationship',text(G){const p=getPartner();return`${p?p.name:'Your partner'} tells ${G.name} the news. Positive. Neither planned this. The room is very quiet.`;},choices:[{l:'👶 Embrace it — be fully present',fx:{happy:10,social:12,cash:-20000},log:'👶 Welcomed a child',cb(G){const p=getPartner();const cn=pick(['Noah','Liam','Leo','Ezra','Mason','Kai','Jordan','Ava','Luna','Zara']);G.children.push({name:cn,bornAt:G.age+1,secret:false,parentId:p?p.id:null});if(p)p.love=cl(p.love+18);addAward('👶','Became a parent','Welcomed '+cn+' — age '+G.age);G.cash-=20000;}},{l:'😔 Not ready — honest conversation',fx:{social:-15,happy:-10},log:'Had a hard conversation about parenthood'}]},
+{id:'propose',a:[23,50],hP:true,title:'💍 The question',ctx:'💕 Relationship',text(G){const p=getPartner();return`${G.name} and ${p?p.name:'your partner'} at dinner. The moment presents itself. Everyone who knows them has been waiting for this.`;},choices:[{l:'💍 Get down on one knee',fx:{happy:25,social:20,cash:-10000},log:'💍 Got engaged',cb(G){const p=getPartner();if(p){p.role='spouse';p.love=cl(p.love+28);p.trust=cl(p.trust+22);}G.cash-=10000;addAward('💍','Engaged','Proposed at age '+G.age);}},{l:'😬 Not ready yet',fx:{social:-8,happy:-4},log:'Decided not to propose yet'}]},
+{id:'invest',a:[22,60],title:'💰 Investment opportunity',ctx:'💸 Finance',text(G){return`Someone ${G.name} trusts brings a deal 📊. ${G.cash>50000?'💰 Capital is there.':'😬 It\'d be a stretch.'}`;},choices:[{l:'💥 Go all in',fx:{},log:'💰 Bold investment',cb(G){if(Math.random()<.55){G.cash=Math.round(G.cash*2.4);addAward('💰','Investment win 🎉','Major return — age '+G.age);}else{G.cash=Math.max(500,Math.round(G.cash*.2));addLog('😔 Investment wiped out savings.');}},style:'risk'},{l:'📊 Modest stake',fx:{},log:'Modest investment',cb(G){G.cash=Math.round(G.cash*(Math.random()<.65?1.5:.8));}},{l:'✋ Pass',fx:{happy:3},log:'Passed on the investment'}]},
+{id:'health_ev',a:[24,70],title:'🏥 Health check',ctx:'💪 Health',text(){return`The doctor has notes 🏥. The lifestyle is showing in the numbers.`;},choices:[{l:'💪 Full overhaul — new habits now',fx:{health:22,happy:5,cash:-4000},log:'💪 Committed to health overhaul'},{l:'🥗 Make some changes',fx:{health:9},log:'Made health adjustments'},{l:'😤 Ignore it',fx:{health:-15},log:'Ignored health warning'}]},
+{id:'brand_ev',a:[22,55],mF:30,title:'📸 Brand deal offer',ctx:'⭐ Public profile',text(G){return`${G.name}\'s name means something now ⭐. A major brand wants ${hm(G.gender)} as the face of a campaign 📸.`;},choices:[{l:'✅ Sign it',fx:{fame:20,cash:600000,happy:8},log:'📸 Signed major brand deal',cb(G){addAward('📸','Brand deal signed','Major endorsement — age '+G.age);G.cash+=600000;}},{l:'🏢 Build own brand',fx:{fame:14,cash:200000,career:10},log:'Building own brand instead'},{l:'🔒 Stay private',fx:{happy:12,fame:-5},log:'Turned down brand deal'}]},
+];
+
+const FILL=[
+{title:'😌 A quiet season',ctx:'🌱 Life',text:'Nothing dramatic. Life moves forward.',choices:[{l:'😴 Rest and recharge',fx:{happy:9,health:7},log:'Restful quiet season'},{l:'💪 Push harder',fx:{career:7,cash:5000,health:-5},log:'Pushed through a quiet period'},{l:'📱 Reach out to someone',fx:{social:12,happy:6},log:'Reconnected with someone'}]},
+{title:'😬 Money tighter than expected',ctx:'💸 Finance',text:'Bills stacking. Cushion thinner than it should be.',choices:[{l:'💼 Pick up extra work',fx:{cash:8000,health:-5},log:'Picked up extra work'},{l:'✂️ Cut back',fx:{cash:5000,happy:-6},log:'Cut spending'},{l:'🙏 Borrow from someone',fx:{cash:6000,social:-10},log:'Borrowed money'}]},
+{title:'📱 Old friend resurfaces',ctx:'🤝 Social',text:'A message from someone you haven\'t spoken to in years.',choices:[{l:'🤙 Meet up',fx:{social:12,happy:7},log:'Reconnected with old friend'},{l:'💬 Reply briefly',fx:{social:4},log:'Brief reply to old friend'},{l:'🚫 Leave it',fx:{social:-3},log:'Left message unanswered'}]},
+];
+
+function getNextEv(){
+  const sm=getSM(),partner=getPartner();
+  const smS=sm&&sm.secret&&!sm.caught&&!sm.broken;
+  const smC=sm&&sm.caught;
+  const smI=sm&&sm.role==='interest'&&!sm.broken;
+  const pool=EVENTS.filter(e=>{
+    if(G.usedEvs.includes(e.id))return false;
+    if(e.sp&&e.sp!==G.sport)return false;
+    if(e.ml!==undefined&&G.sLvl<e.ml)return false;
+    if(e.xl!==undefined&&G.sLvl>e.xl)return false;
+    if(e.a&&G.age<e.a[0])return false;
+    if(e.a&&G.age>e.a[1])return false;
+    if(e.mF&&G.fame<e.mF)return false;
+    if(e.smO&&!sm)return false;
+    if(e.smS&&!smS)return false;
+    if(e.smC&&!smC)return false;
+    if(e.smI&&!smI)return false;
+    if(e.nP&&partner)return false;
+    if(e.hP&&!partner)return false;
+    return true;
+  });
+  if(!pool.length)return null;
+  const sportPool=pool.filter(e=>e.sp);
+  if(sportPool.length&&Math.random()<0.55)return pick(sportPool);
+  return pick(pool);
+}
+
+function nextEvent(){
+  advanceTime();
+  if(G.age>84||G.health<=3){endGame();return;}
+  renderStats();
+  const ev=getNextEv();
+  if(ev){G.usedEvs.push(ev.id);G.pendingEv=ev;}
+  else G.pendingEv=pick(FILL);
+  if(curTab==='events')renderEvents(document.getElementById('main-content'));
+}
+
+function showEvDirect(ev){G.pendingEv=ev;swTab('events',document.querySelector('[data-tab=events]'));}
+
+function choose(idx){
+  const c=G.pendingEv.choices[idx];
+  if(c.fx)applyFx(c.fx);
+  if(c.cb)c.cb(G);
+  addLog(c.log);
+  saveGame();
+  nextEvent();
+}
+
+function playAsChild(idx){
+  const child=G.children[idx];const old={...G};
+  G={name:child.name,gender:pick(['male','female']),bg:old.bg,fam:'both',sport:old.sport,nat:old.nat,natL:old.natL,natF:old.natF,homeCity:old.homeCity,curCity:old.homeCity,age:18,year:1,sIdx:0,gen:old.gen+1,happy:62,health:76,money:old.cash>500000?70:old.cash>100000?52:35,social:60,career:24,fame:0,cash:old.cash>1000000?80000:old.cash>200000?28000:9000,log:[],awards:[],children:[],npcs:[{name:old.name,age:old.age,gender:old.gender,role:'parent',desc:'👑 Your parent. Their legacy shapes your world.',love:68,trust:65,secret:false,caught:false,broken:false,id:'p0'}],teammates:[],partner:null,usedEvs:[],sLvl:0,cs:{goals:0,trophies:0,comebacks:0,wins:0},season:{wins:0,losses:0,goals:0,pts:0,tds:0},retired:false,pendingEv:null,coach:false,club:old.sport==='soccer'?'⚽ Youth club':old.sport==='basketball'?'🏀 Street courts':old.sport==='football'?'🏈 Youth league':'💼 Career',clubHistory:[],offers:[],injury:null,rehab:0,cities:[old.homeCity],assets:{car:null,props:[],spend:0,rental:0}};
+  if(old.sport!=='none'){const sp=old.sport==='soccer'?['Carlos','Ahmed','Diallo','Javi']:old.sport==='basketball'?['Marcus','DeShawn']:['Tyler','Donte'];G.teammates=TM_POOL.filter(t=>sp.includes(t.name)).map(t=>({...t,partner:t.partner?{...t.partner}:null}));}
+  addLog('👶 Born to '+old.name+' — Generation '+G.gen);
+  if(old.awards.length>=4)addAward('👑','Famous parent','Child of '+old.name);
+  saveGame();showScreen('sc-game');renderHdr();renderStats();swTab('events',document.querySelector('[data-tab=events]'));nextEvent();
+}
+
+function endGame(){
+  showScreen('sc-end');
+  const sc=Math.round((G.happy+G.health+G.social+G.career)/4);
+  const emoji=sc>=70?'🌟':sc>=45?'⭐':'💔';
+  document.getElementById('end-emoji').textContent=emoji;
+  document.getElementById('end-title').textContent=G.name+'\'s story ends';
+  document.getElementById('end-body').textContent=sc>=70?`${G.name} built a life worth telling. Real joy, real pain, and enough moments that mattered to make it count.`:sc>=45?`${G.name}\'s life was complicated — wins and regrets in equal measure. Entirely their own.`:`${G.name} carried a heavy load. Some circumstance, some choice. It still counted.`;
+  const stats=[['💰 Net worth',fmt(G.cash)],['🏆 Trophies',G.cs.trophies],['🏅 Awards',G.awards.length],['🔄 Comebacks',G.cs.comebacks],['🌍 Cities visited',G.cities.length],['🎂 Age at end',G.age],['👶 Generation',G.gen]];
+  document.getElementById('end-stats-card').innerHTML=`<h3>📊 Final stats</h3>${stats.map(([l,v])=>`<div class="end-stat"><span style="color:var(--text2)">${l}</span><span>${v}</span></div>`).join('')}`;
+  const assets=[];
+  if(G.assets.car){const c=CARS.find(x=>x.id===G.assets.car);if(c)assets.push(c.e+' '+c.n);}
+  G.assets.props.forEach(pid=>{const p=PROPS.find(x=>x.id===pid);if(p)assets.push(p.e+' '+p.n);});
+  if(assets.length){document.getElementById('end-assets-card').style.display='block';document.getElementById('end-assets-card').innerHTML=`<h3>🏠 Assets owned</h3><div style="font-size:13px;color:var(--text2)">${assets.join(' · ')}</div>`;}
+  const childArea=document.getElementById('end-children-area');
+  childArea.innerHTML=G.children.length?`<div class="card"><h3>👶 Continue as a child</h3>${G.children.map((ch,i)=>`<button class="start-btn" style="margin-bottom:8px" onclick="playAsChild(${i})">▶️ Play as ${ch.name}</button>`).join('')}</div>`:'';
+  localStorage.removeItem('lifesim_save');
+}
+
+function saveGame(){try{localStorage.setItem('lifesim_save',JSON.stringify(G));}catch(e){}}
+function loadGame(){try{const s=localStorage.getItem('lifesim_save');if(s){G=JSON.parse(s);showScreen('sc-game');renderHdr();renderStats();if(!G.pendingEv){const ev=getNextEv();if(ev){G.usedEvs.push(ev.id);G.pendingEv=ev;}else G.pendingEv=pick(FILL);}swTab('events',document.querySelector('[data-tab=events]'));return true;}}catch(e){}return false;}
+function resetGame(){localStorage.removeItem('lifesim_save');G={};selNat='egyptian';selSport='soccer';buildUI();showScreen('sc-create');}
+
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
+
+if('serviceWorker' in navigator){
+  const swCode=`
+self.addEventListener('install',e=>e.waitUntil(caches.open('lifesim-v1').then(c=>c.add('/'))));
+self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+`;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+
+window.addEventListener('load',()=>{if(!loadGame()){showScreen('sc-create');}});
+</script>
+</body>
+</html>
